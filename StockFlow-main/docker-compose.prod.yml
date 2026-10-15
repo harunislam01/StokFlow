@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: electromtech_postgres_prod
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: PROD_SECURE_PASSWORD_HERE # Change this to a secure password
+      POSTGRES_DB: electromtech_stok
+    # Bind database port only to localhost (127.0.0.1) for security.
+    # This prevents direct access to the database from the public internet.
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d electromtech_stok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: electromtech_backend_prod
+    restart: always
+    # Load production environment file
+    env_file:
+      - ./backend/.env.production
+    environment:
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:PROD_SECURE_PASSWORD_HERE@postgres:5432/electromtech_stok?schema=public
+    expose:
+      - "5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: electromtech_frontend_prod
+    restart: always
+    # Exposes port 80 to the host. In a production server, you can proxy this 
+    # to port 443 with SSL/HTTPS using Nginx or Caddy on the host system.
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data_prod:

@@ -1,0 +1,224 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum MovementType {
+  IN
+  OUT
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           Int             @id @default(autoincrement())
+  username     String          @unique
+  passwordHash String          @map("password_hash")
+  role         Role            @default(USER)
+  isActive     Boolean         @default(true) @map("is_active")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  deletedAt    DateTime?       @map("deleted_at")
+  
+  movements         StockMovement[]
+  syncQueues        SyncQueue[]
+  auditLogs         AuditLog[]
+  pushSubscriptions PushSubscription[]
+  createdProjects   Project[]        @relation("ProjectCreator")
+  assignedProducts  ProjectProduct[] @relation("ProjectProductAssigner")
+
+  @@map("users")
+}
+
+model Category {
+  id          Int        @id @default(autoincrement())
+  name        String
+  parentId    Int?       @map("parent_id")
+  icon        String?
+  color       String?
+  formSchema  Json       @map("form_schema")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  deletedAt   DateTime?  @map("deleted_at")
+  version     Int        @default(1)
+
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+
+  @@index([parentId])
+  @@index([deletedAt])
+  @@map("categories")
+}
+
+model Product {
+  id                Int             @id @default(autoincrement())
+  categoryId        Int             @map("category_id")
+  productCode       String          @map("product_code")
+  materialCode      String?         @map("material_code")
+  name              String
+  description       String?
+  stockQuantity     Int             @map("stock_quantity")
+  minimumStock      Int             @default(10) @map("minimum_stock")
+  location          String?
+  attributes        Json            @default("{}")
+  version           Int             @default(1)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  deletedAt         DateTime?       @map("deleted_at")
+
+  category          Category        @relation(fields: [categoryId], references: [id])
+  movements         StockMovement[]
+  notifications     Notification[]
+  images            ProductImage[]
+  projects          ProjectProduct[]
+
+  @@index([categoryId])
+  @@index([deletedAt])
+  @@index([productCode])
+  @@index([stockQuantity])
+  @@index([deletedAt, categoryId])
+  @@map("products")
+}
+
+model StockMovement {
+  id           Int          @id @default(autoincrement())
+  productId    Int          @map("product_id")
+  userId       Int          @map("user_id")
+  changeAmount Int          @map("change_amount")
+  movementType MovementType @map("movement_type")
+  reason       String?
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  product      Product      @relation(fields: [productId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([productId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("stock_movements")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  productId Int      @map("product_id")
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@map("notifications")
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  productId Int      @map("product_id")
+  url       String
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model SyncQueue {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  actionType String    @map("action_type")
+  payload    Json
+  status     String    @default("PENDING")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  syncedAt   DateTime? @map("synced_at")
+
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("sync_queue")
+}
+
+model AuditLog {
+  id         Int       @id @default(autoincrement())
+  userId     Int?      @map("user_id")
+  entityType String    @map("entity_type")
+  entityId   Int?      @map("entity_id")
+  action     String
+  oldData    Json?     @map("old_data")
+  newData    Json?     @map("new_data")
+  ipAddress  String?   @map("ip_address")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user       User?     @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  endpoint  String   @unique
+  keys      Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+model Project {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?
+  status      ProjectStatus @default(PLANNING)
+  startDate   DateTime?     @map("start_date")
+  endDate     DateTime?     @map("end_date")
+  createdById Int?          @map("created_by_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  deletedAt   DateTime?     @map("deleted_at")
+
+  createdBy   User?           @relation("ProjectCreator", fields: [createdById], references: [id])
+  products    ProjectProduct[]
+
+  @@index([deletedAt])
+  @@map("projects")
+}
+
+model ProjectProduct {
+  id           Int      @id @default(autoincrement())
+  projectId    Int      @map("project_id")
+  productId    Int      @map("product_id")
+  quantity     Int      @default(1)
+  note         String?
+  assignedAt   DateTime @default(now()) @map("assigned_at")
+  assignedById Int?     @map("assigned_by_id")
+
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  product      Product  @relation(fields: [productId], references: [id])
+  assignedBy   User?    @relation("ProjectProductAssigner", fields: [assignedById], references: [id])
+
+  @@unique([projectId, productId])
+  @@index([productId])
+  @@map("project_products")
+}

@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%; /* #F8FAFC equivalent */
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 35 92% 37%; /* #B45309 (Copper/Amber) */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 35 92% 95%; /* Light Amber tint */
+    --accent-foreground: 35 92% 30%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%; /* rgba(15,23,42,0.08) */
+    --input: 214.3 31.8% 91.4%;
+    --ring: 35 92% 37%;
+    --radius: 0.75rem; /* md=12px */
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%; /* #0F172A */
+    --foreground: 210 40% 98%;
+    --card: 217.2 32.6% 17.5%; /* #1E293B */
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 35 92% 43%; /* Bright Amber/Copper */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217.2 32.6% 12%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 12.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 12.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 22%; /* rgba(255,255,255,0.08) */
+    --input: 217.2 32.6% 22%;
+    --ring: 35 92% 43%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* ===================================
+   TYPOGRAPHY — IBM PLEX MONO FOR NUMBERS
+   =================================== */
+.font-mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===================================
+   LIGHT MODE — PREMIUM BACKGROUND
+   =================================== */
+html:not(.dark) body {
+  background: #f8fafc;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(217, 119, 6, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 110%, rgba(180, 83, 9, 0.04) 0%, transparent 60%);
+}
+
+/* ===================================
+   DARK MODE — DEEP PREMIUM BACKGROUND
+   =================================== */
+html.dark body {
+  background: #0f172a;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(217, 119, 6, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(180, 83, 9, 0.03) 0%, transparent 50%);
+}
+
+/* ===================================
+   SPACING & RADIUS DEFINITIONS
+   =================================== */
+.rounded-sm { border-radius: 8px !important; }
+.rounded-md { border-radius: 12px !important; }
+.rounded-lg { border-radius: 16px !important; }
+.rounded-xl { border-radius: 24px !important; }
+
+/* ===================================
+   SHADOWS DEFINITIONS
+   =================================== */
+.shadow-xs { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03); }
+.shadow-sm { box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05); }
+.shadow-md { box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.08); }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.12), 0 4px 6px -4px rgba(15, 23, 42, 0.12); }
+
+/* ===================================
+   SCROLLBAR — CUSTOM AMBER
+   =================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(217, 119, 6, 0.25);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(217, 119, 6, 0.45);
+}
+
+/* ===================================
+   ANIMATIONS — SINGLE SIGNATURE MOMENT
+   =================================== */
+@keyframes numberTick {
+  from { transform: translateY(4px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.anim-number-tick {
+  animation: numberTick 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* General clean transitions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Active touch state */
+.btn-tactile:active {
+  transform: scale(0.98);
+}
+
+/* Float animations for background shapes/icons */
+@keyframes floatUp {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(5deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes floatDown {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(12px) rotate(-6deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.animate-float-slow {
+  animation: floatUp 8s ease-in-out infinite;
+}
+
+.animate-float-slower {
+  animation: floatDown 11s ease-in-out infinite;
+}

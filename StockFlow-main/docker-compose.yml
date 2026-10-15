@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: electromtech_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: electromtech_stok
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d electromtech_stok"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: electromtech_backend
+    restart: always
+    environment:
+      PORT: 5000
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/electromtech_stok?schema=public}
+
+
+      JWT_SECRET: supersecretjwtkeyforstoksystem_2026_stok_electrom
+      JWT_REFRESH_SECRET: supersecretrefreshjwtkeyforstoksystem_2026_refresh
+      VAPID_PUBLIC_KEY: BPexBxvsYDImEA7HVk-B5tLwSh62cp8GEyoQ4R3H7KJutWfj4kAP3m0J5JCanh2b0rXUGgQ7JVuRNrfT59NjPiM
+      VAPID_PRIVATE_KEY: fi7WMiRYkfw80Yo49VDopQSEBtef1JILIhwh2l4zpSc
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: electromtech_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
