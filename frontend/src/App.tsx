@@ -16,6 +16,12 @@ const SearchPage = lazy(() => import('./pages/SearchPage').then(m => ({ default:
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then(m => ({ default: m.ProjectsPage })));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage').then(m => ({ default: m.ProjectDetailPage })));
+const StockPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.StockPage })));
+const CategoriesListPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.CategoriesListPage })));
+const ProductsListPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.ProductsListPage })));
+const SuppliersPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.SuppliersPage })));
+const ReportsPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.ReportsPage })));
+const MovementsPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.MovementsPage })));
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PwaInstallPrompt } from './components/ui/PwaInstallPrompt';
@@ -50,7 +56,7 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme-dark">
+    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Router>
@@ -65,15 +71,22 @@ function App() {
                   <ProtectedRoute>
                     <AppLayout>
                       <ErrorBoundary>
-                        <Suspense fallback={<div className="flex h-full items-center justify-center p-8"><div className="animate-spin h-8 w-8 border-4 border-amber-600 rounded-full border-t-transparent"></div></div>}>
+                        <Suspense fallback={<div className="flex h-full items-center justify-center p-8"><div className="animate-spin h-8 w-8 border-4 border-blue-600 rounded-full border-t-transparent"></div></div>}>
                           <Routes>
                             <Route path="/" element={<DashboardPage />} />
+                            <Route path="/stok" element={<StockPage />} />
+                            <Route path="/kategoriler" element={<CategoriesListPage />} />
+                            <Route path="/urunler" element={<ProductsListPage />} />
+                            <Route path="/tedarikciler" element={<SuppliersPage />} />
+                            <Route path="/raporlar" element={<ReportsPage />} />
+                            <Route path="/hareketler" element={<MovementsPage />} />
                             <Route path="/category/:id" element={<CategoryPage />} />
                             <Route path="/category/:categoryId/new" element={<ProductFormPage />} />
                             <Route path="/product/new" element={<ProductFormPage />} />
                             <Route path="/product/:id/edit" element={<ProductFormPage />} />
                             <Route path="/product/:id" element={<ProductDetailPage />} />
                             <Route path="/search" element={<SearchPage />} />
+                            <Route path="/ayarlar" element={<SettingsPage />} />
                             <Route path="/settings" element={<SettingsPage />} />
                             <Route path="/projects" element={<ProjectsPage />} />
                             <Route path="/projects/:id" element={<ProjectDetailPage />} />

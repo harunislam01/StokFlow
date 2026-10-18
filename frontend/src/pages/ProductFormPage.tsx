@@ -11,7 +11,6 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent } from '../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useTheme } from '../context/ThemeProvider';
 
 const productSchema = z.object({
   categoryId: z.number().min(1, 'Kategori seçimi zorunludur'),
@@ -33,8 +32,6 @@ export const ProductFormPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isEditing = !!id;
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
@@ -116,16 +113,12 @@ export const ProductFormPage = () => {
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-12 w-12 rounded-xl btn-tactile">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           {isEditing ? 'Ürün Düzenle' : 'Yeni Ürün Ekle'}
         </h1>
       </div>
 
-      <Card className={`rounded-xl border shadow-sm transition-all duration-150
-        ${isDark
-          ? 'bg-[#1e293b] border-white/[0.07]'
-          : 'bg-white border-slate-200/80 shadow-slate-900/[0.03]'
-        }`}>
+      <Card className="rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.03]">
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-6 pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -192,8 +185,8 @@ export const ProductFormPage = () => {
 
               {/* DYNAMIC FIELDS BASED ON CATEGORY SCHEMA */}
               {formSchemaFields.length > 0 && (
-                <div className={`md:col-span-2 border-t pt-6 ${isDark ? 'border-white/[0.05]' : 'border-slate-100'}`}>
-                  <h3 className={`text-sm font-bold mb-4 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Kategoriye Özel Alanlar</h3>
+                <div className="md:col-span-2 border-t pt-6 border-slate-100">
+                  <h3 className="text-sm font-bold mb-4 text-slate-800">Kategoriye Özel Alanlar</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {formSchemaFields.map((field: any) => (
                       <div key={field.name} className="space-y-2">
@@ -237,15 +230,11 @@ export const ProductFormPage = () => {
             </div>
           </CardContent>
           
-          <div className={`flex items-center justify-end gap-3 p-6 border-t rounded-b-xl
-            ${isDark 
-              ? 'border-white/[0.06] bg-slate-900/50' 
-              : 'border-slate-200/50 bg-slate-50/50'
-            }`}>
-            <Button variant="outline" type="button" onClick={() => navigate(-1)} className="h-12 rounded-md btn-tactile">
+          <div className="flex items-center justify-end gap-3 p-6 border-t rounded-b-2xl border-slate-200/50 bg-slate-50/50">
+            <Button variant="outline" type="button" onClick={() => navigate(-1)} className="h-12 rounded-xl btn-tactile">
               İptal
             </Button>
-            <Button type="submit" className="bg-amber-600 hover:bg-amber-700 text-white h-12 rounded-md btn-tactile px-5" disabled={mutation.isPending}>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl btn-tactile px-5" disabled={mutation.isPending}>
               <Save className="mr-2 h-4 w-4" />
               {mutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
             </Button>

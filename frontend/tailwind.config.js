@@ -8,8 +8,8 @@ module.exports = {
     './src/**/*.{ts,tsx}',
   ],
   safelist: [
-    { pattern: /(bg|text)-(amber|blue|orange|purple|red|gray|green|yellow|teal|slate)-(500|700|800)/ },
-    { pattern: /bg-(amber|blue|orange|purple|red|gray|green|yellow|teal|slate)-(500|700|800)\/10/ },
+    { pattern: /(bg|text)-(blue|orange|purple|red|gray|green|yellow|teal|slate)-(500|700|800)/ },
+    { pattern: /bg-(blue|orange|purple|red|gray|green|yellow|teal|slate)-(500|700|800)\/10/ },
   ],
   theme: {
     container: {

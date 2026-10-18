@@ -30,18 +30,18 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-[60vh] flex items-center justify-center p-4">
-          <Card className="max-w-md w-full border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-950/20 backdrop-blur-sm">
+          <Card className="max-w-md w-full border-red-200 bg-red-50/50">
             <CardContent className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-              <div className="p-4 bg-red-100 dark:bg-red-900/40 rounded-full text-red-600 dark:text-red-400">
+              <div className="p-4 bg-red-100 rounded-full text-red-600">
                 <AlertTriangle className="h-10 w-10" />
               </div>
               <div className="space-y-2">
-                <h2 className="text-xl font-bold text-red-900 dark:text-red-200">Beklenmedik Bir Hata Oluştu</h2>
-                <p className="text-sm text-red-700 dark:text-red-400">
+                <h2 className="text-xl font-bold text-red-900">Beklenmedik Bir Hata Oluştu</h2>
+                <p className="text-sm text-red-700">
                   Uygulama çalışırken bir sorunla karşılaştı. Lütfen sayfayı yenileyin.
                 </p>
                 {this.state.error && (
-                  <pre className="mt-4 p-3 bg-red-100/50 dark:bg-red-950/50 text-red-800 dark:text-red-300 rounded text-xs text-left overflow-x-auto max-w-full">
+                  <pre className="mt-4 p-3 bg-red-100/50 text-red-800 rounded text-xs text-left overflow-x-auto max-w-full">
                     {this.state.error.message}
                   </pre>
                 )}

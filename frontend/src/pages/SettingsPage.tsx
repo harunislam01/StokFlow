@@ -16,14 +16,14 @@ import { User as UserIcon, Shield, Users, FolderTree, Edit2, Trash2, Plus, LogOu
 import { apiClient } from '../api/client';
 
 const OfflineWarning = ({ sectionName }: { sectionName: string }) => (
-  <Card className="rounded-2xl shadow-sm border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm">
+  <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white backdrop-blur-sm">
     <CardContent className="flex flex-col items-center justify-center p-12 text-center space-y-4">
-      <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-full text-amber-500">
+      <div className="p-4 bg-blue-50 rounded-full text-blue-600">
         <WifiOff className="h-10 w-auto" />
       </div>
       <div className="space-y-1">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{sectionName} Çevrimdışı Kullanılamaz</h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
+        <h3 className="text-lg font-bold text-slate-800">{sectionName} Çevrimdışı Kullanılamaz</h3>
+        <p className="text-sm text-slate-500 max-w-sm">
           Bu yönetim modülü doğrudan backend veritabanına bağlıdır. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.
         </p>
       </div>
@@ -47,7 +47,7 @@ const getActionBadge = (action: string) => {
     case 'STOCK_IN':
       return <Badge className="bg-green-600 hover:bg-green-700 text-white">Stok Girişi</Badge>;
     case 'STOCK_OUT':
-      return <Badge className="bg-amber-600 hover:bg-amber-700 text-white">Stok Çıkışı</Badge>;
+      return <Badge className="bg-blue-600 hover:bg-blue-700 text-white">Stok Çıkışı</Badge>;
     case 'CREATE_CATEGORY':
       return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">Kategori Eklendi</Badge>;
     case 'UPDATE_CATEGORY':
@@ -364,16 +364,16 @@ export const SettingsPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-white">Ayarlar</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-slate-800">Ayarlar</h1>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6 overflow-x-auto pb-1">
+      <div className="flex border-b border-slate-200 gap-6 overflow-x-auto pb-1">
         <button
           onClick={() => setActiveTab('profile')}
           className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'profile'
-              ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              ? 'border-blue-600 text-blue-600
+              : 'border-transparent text-slate-500 hover:text-slate-700
           }`}
         >
           Profil & Güvenlik
@@ -384,8 +384,8 @@ export const SettingsPage = () => {
               onClick={() => setActiveTab('users')}
               className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
                 activeTab === 'users'
-                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'border-blue-600 text-blue-600
+                  : 'border-transparent text-slate-500 hover:text-slate-700
               }`}
             >
               Kullanıcı Yönetimi
@@ -394,8 +394,8 @@ export const SettingsPage = () => {
               onClick={() => setActiveTab('categories')}
               className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
                 activeTab === 'categories'
-                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'border-blue-600 text-blue-600
+                  : 'border-transparent text-slate-500 hover:text-slate-700
               }`}
             >
               Kategori Yönetimi
@@ -404,8 +404,8 @@ export const SettingsPage = () => {
               onClick={() => setActiveTab('audit')}
               className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
                 activeTab === 'audit'
-                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'border-blue-600 text-blue-600
+                  : 'border-transparent text-slate-500 hover:text-slate-700
               }`}
             >
               Denetim Kayıtları (Audit)
@@ -418,10 +418,10 @@ export const SettingsPage = () => {
         {/* Profile Tab */}
         {activeTab === 'profile' && (
           <div className="space-y-6">
-            <Card className="rounded-xl border shadow-sm transition-all duration-150 bg-white/60 dark:bg-slate-900/60 border-slate-200/80 dark:border-white/[0.07]">
+            <Card className="rounded-xl border shadow-sm transition-all duration-150 bg-white border-slate-200/80">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <UserIcon className="h-5 w-5 text-amber-600 dark:text-amber-500" /> Profil Bilgileri
+                  <UserIcon className="h-5 w-5 text-blue-600" /> Profil Bilgileri
                 </CardTitle>
                 <CardDescription>Oturum açmış kullanıcı detayları</CardDescription>
               </CardHeader>
@@ -429,13 +429,13 @@ export const SettingsPage = () => {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <span className="text-xs font-semibold text-slate-400 uppercase">Kullanıcı Adı</span>
-                    <p className="text-base font-bold text-slate-800 dark:text-slate-100">{user?.username}</p>
+                    <p className="text-base font-bold text-slate-800">{user?.username}</p>
                   </div>
                   <div className="space-y-1">
                     <span className="text-xs font-semibold text-slate-400 uppercase">Yetki Rolü</span>
                     <div className="flex items-center gap-1 mt-0.5">
-                      <Shield className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-                      <Badge variant={user?.role === 'ADMIN' ? 'default' : 'secondary'} className={user?.role === 'ADMIN' ? 'bg-amber-600 text-white hover:bg-amber-700' : ''}>
+                      <Shield className="h-4 w-4 text-blue-600" />
+                      <Badge variant={user?.role === 'ADMIN' ? 'default' : 'secondary'} className={user?.role === 'ADMIN' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}>
                         {user?.role === 'ADMIN' ? 'Yönetici (Admin)' : 'Standart Kullanıcı'}
                       </Badge>
                     </div>
@@ -447,25 +447,25 @@ export const SettingsPage = () => {
               </CardContent>
             </Card>
 
-            <Card className="rounded-xl border shadow-sm transition-all duration-150 bg-white/60 dark:bg-slate-900/60 border-slate-200/80 dark:border-white/[0.07]">
+            <Card className="rounded-xl border shadow-sm transition-all duration-150 bg-white border-slate-200/80">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-amber-600 dark:text-amber-500" /> Web Push Bildirimleri
+                  <Bell className="h-5 w-5 text-blue-600" /> Web Push Bildirimleri
                 </CardTitle>
                 <CardDescription>Depo kritik stok uyarılarını anlık bildirim olarak alın</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-slate-200/50 dark:border-white/[0.05]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-slate-200/50">
                   <div>
                     <p className="text-sm font-semibold">Anlık Bildirim İzin Durumu</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {pushPermission === 'granted' ? 'Etkinleştirildi' : pushPermission === 'denied' ? 'Engellendi (Ayarlardan açın)' : 'Henüz İzin İstenmedi'}
                     </p>
                   </div>
                   <Button
                     onClick={handleSubscribePush}
                     disabled={pushPermission === 'granted'}
-                    className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs h-11 px-4 btn-tactile rounded-md"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs h-11 px-4 btn-tactile rounded-md"
                   >
                     {pushPermission === 'granted' ? 'Abonelik Aktif' : 'Bildirimleri Aç'}
                   </Button>
@@ -478,11 +478,11 @@ export const SettingsPage = () => {
         {/* User Management Tab */}
         {activeTab === 'users' && user?.role === 'ADMIN' && (
           !navigator.onLine ? <OfflineWarning sectionName="Kullanıcı Yönetimi" /> : (
-          <Card className="rounded-2xl shadow-sm border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm">
+          <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-indigo-600" /> Kullanıcılar
+                  <Users className="h-5 w-5 text-blue-600" /> Kullanıcılar
                 </CardTitle>
                 <CardDescription>Sisteme kayıtlı kullanıcıları ve rollerini yönetin</CardDescription>
               </div>
@@ -506,7 +506,7 @@ export const SettingsPage = () => {
                   <TableBody>
                     {users?.map((u) => (
                       <TableRow key={u.id}>
-                        <TableCell className="font-semibold text-slate-800 dark:text-slate-100">{u.username}</TableCell>
+                        <TableCell className="font-semibold text-slate-800">{u.username}</TableCell>
                         <TableCell>
                           <Badge variant={u.role === 'ADMIN' ? 'default' : 'secondary'}>{u.role}</Badge>
                         </TableCell>
@@ -517,7 +517,7 @@ export const SettingsPage = () => {
                         </TableCell>
                         <TableCell className="text-right space-x-2">
                           <Button variant="ghost" size="icon" onClick={() => handleEditUser(u)}>
-                            <Edit2 className="h-4 w-4 text-slate-500 hover:text-indigo-600" />
+                            <Edit2 className="h-4 w-4 text-slate-500 hover:text-blue-600" />
                           </Button>
                           {u.username !== 'admin' && (
                             <Button variant="ghost" size="icon" onClick={() => { if (confirm('Kullanıcıyı silmek istediğinize emin misiniz?')) deleteUserMutation.mutate(u.id); }}>
@@ -538,11 +538,11 @@ export const SettingsPage = () => {
         {/* Category Management Tab */}
         {activeTab === 'categories' && user?.role === 'ADMIN' && (
           !navigator.onLine ? <OfflineWarning sectionName="Kategori Yönetimi" /> : (
-          <Card className="rounded-2xl shadow-sm border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm">
+          <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <FolderTree className="h-5 w-5 text-indigo-600" /> Kategoriler
+                  <FolderTree className="h-5 w-5 text-blue-600" /> Kategoriler
                 </CardTitle>
                 <CardDescription>Bileşen kategorilerini ve form şemalarını tasarlayın</CardDescription>
               </div>
@@ -569,7 +569,7 @@ export const SettingsPage = () => {
                       const parent = categories.find(pc => pc.id === c.parentId);
                       return (
                         <TableRow key={c.id}>
-                          <TableCell className="font-semibold text-slate-800 dark:text-slate-100">{c.name}</TableCell>
+                          <TableCell className="font-semibold text-slate-800">{c.name}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <span className={`w-3 h-3 rounded-full bg-${c.color || 'slate-500'}`} />
@@ -582,7 +582,7 @@ export const SettingsPage = () => {
                           </TableCell>
                           <TableCell className="text-right space-x-2">
                             <Button variant="ghost" size="icon" onClick={() => handleEditCategory(c)}>
-                              <Edit2 className="h-4 w-4 text-slate-500 hover:text-indigo-600" />
+                              <Edit2 className="h-4 w-4 text-slate-500 hover:text-blue-600" />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => { if (confirm('Kategoriyi silmek istediğinize emin misiniz?')) deleteCategoryMutation.mutate(c.id); }}>
                               <Trash2 className="h-4 w-4 text-slate-500 hover:text-red-600" />
@@ -602,10 +602,10 @@ export const SettingsPage = () => {
         {/* Audit Logs Tab (Öneri 2) */}
         {activeTab === 'audit' && user?.role === 'ADMIN' && (
           !navigator.onLine ? <OfflineWarning sectionName="Denetim Kayıtları (Audit Logs)" /> : (
-          <Card className="rounded-2xl shadow-sm border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm">
+          <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5 text-indigo-600" /> Sistem Denetim Kayıtları (Audit Logs)
+                <History className="h-5 w-5 text-blue-600" /> Sistem Denetim Kayıtları (Audit Logs)
               </CardTitle>
               <CardDescription>Sistem üzerinde gerçekleştirilen tüm veri yazma, güncelleme ve silme eylemleri</CardDescription>
             </CardHeader>
@@ -632,13 +632,13 @@ export const SettingsPage = () => {
                       return (
                         <React.Fragment key={log.id}>
                           <TableRow
-                            className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/20"
+                            className="cursor-pointer hover:bg-slate-50/50"
                             onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
                           >
                             <TableCell className="w-6">
                               {isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
                             </TableCell>
-                            <TableCell className="font-semibold text-slate-800 dark:text-slate-100 text-xs sm:text-sm">
+                            <TableCell className="font-semibold text-slate-800 text-xs sm:text-sm">
                               {formatDateTime(log.createdAt)}
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">{log.user?.username || 'Sistem'}</TableCell>
@@ -651,18 +651,18 @@ export const SettingsPage = () => {
                           
                           {/* Expanded detail box */}
                           {isExpanded && (
-                            <TableRow className="bg-slate-50/30 dark:bg-slate-950/20">
-                              <TableCell colSpan={6} className="p-4 border-t border-slate-200/50 dark:border-slate-800/50">
+                            <TableRow className="bg-slate-50/30">
+                              <TableCell colSpan={6} className="p-4 border-t border-slate-200/50">
                                 <div className="grid md:grid-cols-2 gap-4 text-xs font-mono">
                                   <div>
                                     <h4 className="font-bold text-slate-400 mb-1 uppercase tracking-wider text-[10px]">Eski Veriler (Old Values)</h4>
-                                    <pre className="p-3 bg-slate-100 dark:bg-slate-900 rounded-xl overflow-x-auto max-h-60 border border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300">
+                                    <pre className="p-3 bg-slate-100 rounded-xl overflow-x-auto max-h-60 border border-slate-200/40 text-slate-700">
                                       {log.oldData ? JSON.stringify(log.oldData, null, 2) : 'Eski Değer Yok'}
                                     </pre>
                                   </div>
                                   <div>
                                     <h4 className="font-bold text-slate-400 mb-1 uppercase tracking-wider text-[10px]">Yeni Veriler (New Values)</h4>
-                                    <pre className="p-3 bg-slate-100 dark:bg-slate-900 rounded-xl overflow-x-auto max-h-60 border border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300">
+                                    <pre className="p-3 bg-slate-100 rounded-xl overflow-x-auto max-h-60 border border-slate-200/40 text-slate-700">
                                       {log.newData ? JSON.stringify(log.newData, null, 2) : 'Yeni Değer Yok'}
                                     </pre>
                                   </div>
@@ -685,7 +685,7 @@ export const SettingsPage = () => {
       {/* User Modal */}
       {userModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl">
+          <Card className="w-full max-w-md bg-white rounded-2xl shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{editingUser ? 'Kullanıcıyı Düzenle' : 'Kullanıcı Ekle'}</CardTitle>
               <Button variant="ghost" size="icon" onClick={() => setUserModalOpen(false)}>
@@ -733,7 +733,7 @@ export const SettingsPage = () => {
       {/* Category Modal */}
       {categoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+          <Card className="w-full max-w-2xl bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{editingCategory ? 'Kategoriyi Düzenle' : 'Kategori Ekle'}</CardTitle>
               <Button variant="ghost" size="icon" onClick={() => setCategoryModalOpen(false)}>
@@ -784,11 +784,11 @@ export const SettingsPage = () => {
                   </div>
 
                   {properties.map((prop, idx) => (
-                    <div key={idx} className="p-4 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-slate-900/50 space-y-3 relative group">
+                    <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3 relative group">
                       <button
                         type="button"
                         onClick={() => removeProperty(idx)}
-                        className="absolute top-3 right-3 p-1 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                        className="absolute top-3 right-3 p-1 rounded-md text-red-500 hover:bg-red-50 transition-colors"
                         title="Özelliği Sil"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -828,7 +828,7 @@ export const SettingsPage = () => {
                             id={`req-${idx}`}
                             checked={prop.required || false}
                             onChange={e => updateProperty(idx, 'required', e.target.checked)}
-                            className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                           />
                           <Label htmlFor={`req-${idx}`} className="text-xs font-semibold cursor-pointer select-none">
                             Zorunlu Alan
@@ -853,7 +853,7 @@ export const SettingsPage = () => {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full border-dashed border-2 py-6 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-900 btn-tactile"
+                    className="w-full border-dashed border-2 py-6 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 btn-tactile"
                     onClick={addProperty}
                   >
                     <Plus className="h-4 w-4" /> Özellik Ekle
