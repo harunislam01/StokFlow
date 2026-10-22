@@ -81,18 +81,13 @@ export const ProductFormPage = () => {
   }, [product, isEditing, form]);
 
   const mutation = useMutation({
-    mutationFn: (data: ProductFormValues) => 
-      isEditing 
-        ? updateProduct(Number(id), { ...data, version: product?.version || 1 }) 
+    mutationFn: (data: ProductFormValues) =>
+      isEditing
+        ? updateProduct(Number(id), { ...data, version: product?.version || 1 })
         : createProduct(data),
     onSuccess: (savedProduct) => {
-      queryClient.invalidateQueries(); 
-      
-      // Haptic feedback on success
-      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-      
+      queryClient.invalidateQueries();
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
       navigate(`/product/${savedProduct.id}`);
     },
     onError: (error: any) => {
@@ -105,36 +100,36 @@ export const ProductFormPage = () => {
     mutation.mutate(data);
   };
 
-  if (isEditing && isLoading) return <div className="text-center py-12">Yükleniyor...</div>;
+  if (isEditing && isLoading) return <div className="text-center py-12 text-slate-500">Yükleniyor...</div>;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-10">
+    <div className="max-w-3xl mx-auto space-y-6 pb-10 pt-4">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-12 w-12 rounded-xl btn-tactile">
-          <ArrowLeft className="h-5 w-5" />
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-10 w-10 rounded-xl hover:bg-slate-100">
+          <ArrowLeft className="h-5 w-5 text-slate-600" />
         </Button>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           {isEditing ? 'Ürün Düzenle' : 'Yeni Ürün Ekle'}
         </h1>
       </div>
 
-      <Card className="rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.03]">
+      <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-6 pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+
               <div className="space-y-2">
-                <Label htmlFor="categoryId">Kategori *</Label>
+                <Label htmlFor="categoryId" className="text-slate-700">Kategori *</Label>
                 <Controller
                   name="categoryId"
                   control={form.control}
                   render={({ field }) => (
-                    <Select 
+                    <Select
                       onValueChange={(val) => field.onChange(Number(val))}
                       value={field.value?.toString()}
                       disabled={!!categoryIdParam && !isEditing}
                     >
-                      <SelectTrigger id="categoryId" className={`h-12 text-base rounded-sm ${form.formState.errors.categoryId ? 'border-red-500' : ''}`}>
+                      <SelectTrigger id="categoryId" className={`h-11 text-sm rounded-xl bg-slate-50/50 ${form.formState.errors.categoryId ? 'border-red-500' : 'border-slate-200'}`}>
                         <SelectValue placeholder="Kategori Seçin" />
                       </SelectTrigger>
                       <SelectContent>
@@ -146,63 +141,60 @@ export const ProductFormPage = () => {
                   )}
                 />
                 {form.formState.errors.categoryId && (
-                  <p className="text-sm text-red-500">{form.formState.errors.categoryId.message}</p>
+                  <p className="text-xs text-red-500 font-medium">{form.formState.errors.categoryId.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="productCode">Ürün Kodu *</Label>
-                <Input id="productCode" {...form.register('productCode')} className={`h-12 text-base rounded-sm font-mono ${form.formState.errors.productCode ? 'border-red-500' : ''}`} />
-                {form.formState.errors.productCode && <p className="text-sm text-red-500">{form.formState.errors.productCode.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="name">Ürün İsmi *</Label>
-                <Input id="name" placeholder="Örn: 10K Ohm Direnç" {...form.register('name')} className={`h-12 text-base rounded-sm ${form.formState.errors.name ? 'border-red-500' : ''}`} />
-                {form.formState.errors.name && <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="stockQuantity">Mevcut Stok Adedi *</Label>
-                <Input id="stockQuantity" type="number" inputMode="numeric" {...form.register('stockQuantity', { valueAsNumber: true })} className={`h-12 text-base rounded-sm font-mono ${form.formState.errors.stockQuantity ? 'border-red-500' : ''}`} />
-                {form.formState.errors.stockQuantity && <p className="text-sm text-red-500">{form.formState.errors.stockQuantity.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="minimumStock">Düşük Stok Uyarı Sınırı</Label>
-                <Input id="minimumStock" type="number" inputMode="numeric" {...form.register('minimumStock', { valueAsNumber: true })} className="h-12 text-base rounded-sm font-mono" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="location">Raf / Dolap Konumu</Label>
-                <Input id="location" placeholder="Örn: Raf-A1" {...form.register('location')} className="h-12 text-base rounded-sm font-mono" />
+                <Label htmlFor="productCode" className="text-slate-700">Ürün Kodu *</Label>
+                <Input id="productCode" {...form.register('productCode')} className={`h-11 text-sm rounded-xl bg-slate-50/50 font-mono ${form.formState.errors.productCode ? 'border-red-500' : 'border-slate-200'}`} />
+                {form.formState.errors.productCode && <p className="text-xs text-red-500 font-medium">{form.formState.errors.productCode.message}</p>}
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="description">Açıklama</Label>
-                <Input id="description" {...form.register('description')} className="h-12 text-base rounded-sm" />
+                <Label htmlFor="name" className="text-slate-700">Ürün İsmi *</Label>
+                <Input id="name" placeholder="Örn: 10K Ohm Direnç" {...form.register('name')} className={`h-11 text-sm rounded-xl bg-slate-50/50 ${form.formState.errors.name ? 'border-red-500' : 'border-slate-200'}`} />
+                {form.formState.errors.name && <p className="text-xs text-red-500 font-medium">{form.formState.errors.name.message}</p>}
               </div>
 
-              {/* DYNAMIC FIELDS BASED ON CATEGORY SCHEMA */}
+              <div className="space-y-2">
+                <Label htmlFor="stockQuantity" className="text-slate-700">Mevcut Stok Adedi *</Label>
+                <Input id="stockQuantity" type="number" inputMode="numeric" {...form.register('stockQuantity', { valueAsNumber: true })} className={`h-11 text-sm rounded-xl bg-slate-50/50 font-mono ${form.formState.errors.stockQuantity ? 'border-red-500' : 'border-slate-200'}`} />
+                {form.formState.errors.stockQuantity && <p className="text-xs text-red-500 font-medium">{form.formState.errors.stockQuantity.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="minimumStock" className="text-slate-700">Düşük Stok Uyarı Sınırı</Label>
+                <Input id="minimumStock" type="number" inputMode="numeric" {...form.register('minimumStock', { valueAsNumber: true })} className="h-11 text-sm rounded-xl bg-slate-50/50 border-slate-200 font-mono" />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location" className="text-slate-700">Raf / Dolap Konumu</Label>
+                <Input id="location" placeholder="Örn: Raf-A1" {...form.register('location')} className="h-11 text-sm rounded-xl bg-slate-50/50 border-slate-200 font-mono" />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="description" className="text-slate-700">Açıklama</Label>
+                <Input id="description" {...form.register('description')} className="h-11 text-sm rounded-xl bg-slate-50/50 border-slate-200" />
+              </div>
+
+              {/* DYNAMIC FIELDS */}
               {formSchemaFields.length > 0 && (
                 <div className="md:col-span-2 border-t pt-6 border-slate-100">
                   <h3 className="text-sm font-bold mb-4 text-slate-800">Kategoriye Özel Alanlar</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {formSchemaFields.map((field: any) => (
                       <div key={field.name} className="space-y-2">
-                        <Label htmlFor={`attributes.${field.name}`}>{field.label}{field.required ? ' *' : ''}</Label>
-                        
+                        <Label htmlFor={`attributes.${field.name}`} className="text-slate-700">{field.label}{field.required ? ' *' : ''}</Label>
+
                         {field.type === 'select' ? (
                           <Controller
                             name={`attributes.${field.name}`}
                             control={form.control}
                             rules={{ required: field.required }}
                             render={({ field: selectField }) => (
-                              <Select
-                                onValueChange={selectField.onChange}
-                                value={(selectField.value as string) || ''}
-                              >
-                                <SelectTrigger id={`attributes.${field.name}`} className="h-12 text-base rounded-sm">
+                              <Select onValueChange={selectField.onChange} value={(selectField.value as string) || ''}>
+                                <SelectTrigger id={`attributes.${field.name}`} className="h-11 text-sm rounded-xl bg-slate-50/50 border-slate-200">
                                   <SelectValue placeholder="Seçiniz" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -214,12 +206,7 @@ export const ProductFormPage = () => {
                             )}
                           />
                         ) : (
-                          <Input
-                            id={`attributes.${field.name}`}
-                            placeholder={field.placeholder || ''}
-                            className="h-12 text-base rounded-sm font-mono"
-                            {...form.register(`attributes.${field.name}`, { required: field.required })}
-                          />
+                          <Input id={`attributes.${field.name}`} placeholder={field.placeholder || ''} className="h-11 text-sm rounded-xl bg-slate-50/50 border-slate-200 font-mono" {...form.register(`attributes.${field.name}`, { required: field.required })} />
                         )}
                       </div>
                     ))}
@@ -229,12 +216,12 @@ export const ProductFormPage = () => {
 
             </div>
           </CardContent>
-          
-          <div className="flex items-center justify-end gap-3 p-6 border-t rounded-b-2xl border-slate-200/50 bg-slate-50/50">
-            <Button variant="outline" type="button" onClick={() => navigate(-1)} className="h-12 rounded-xl btn-tactile">
+
+          <div className="flex items-center justify-end gap-3 p-6 border-t rounded-b-2xl border-slate-100 bg-slate-50/50">
+            <Button variant="outline" type="button" onClick={() => navigate(-1)} className="h-11 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100">
               İptal
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl btn-tactile px-5" disabled={mutation.isPending}>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white h-11 rounded-xl px-6" disabled={mutation.isPending}>
               <Save className="mr-2 h-4 w-4" />
               {mutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
             </Button>

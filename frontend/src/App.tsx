@@ -10,6 +10,7 @@ import { Suspense, lazy } from 'react';
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const CategoryPage = lazy(() => import('./pages/CategoryPage').then(m => ({ default: m.CategoryPage })));
+const CategoryListPage = lazy(() => import('./pages/CategoryListPage').then(m => ({ default: m.CategoryListPage })));
 const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })));
 const ProductFormPage = lazy(() => import('./pages/ProductFormPage').then(m => ({ default: m.ProductFormPage })));
 const SearchPage = lazy(() => import('./pages/SearchPage').then(m => ({ default: m.SearchPage })));
@@ -17,7 +18,6 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ defa
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then(m => ({ default: m.ProjectsPage })));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage').then(m => ({ default: m.ProjectDetailPage })));
 const StockPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.StockPage })));
-const CategoriesListPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.CategoriesListPage })));
 const ProductsListPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.ProductsListPage })));
 const SuppliersPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.SuppliersPage })));
 const ReportsPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.ReportsPage })));
@@ -65,8 +65,8 @@ function App() {
             <ConflictResolutionModal />
             <Routes>
               <Route path="/login" element={<LoginPage />} />
-              <Route 
-                path="/*" 
+              <Route
+                path="/*"
                 element={
                   <ProtectedRoute>
                     <AppLayout>
@@ -75,7 +75,7 @@ function App() {
                           <Routes>
                             <Route path="/" element={<DashboardPage />} />
                             <Route path="/stok" element={<StockPage />} />
-                            <Route path="/kategoriler" element={<CategoriesListPage />} />
+                            <Route path="/kategoriler" element={<CategoryListPage />} />
                             <Route path="/urunler" element={<ProductsListPage />} />
                             <Route path="/tedarikciler" element={<SuppliersPage />} />
                             <Route path="/raporlar" element={<ReportsPage />} />
@@ -96,7 +96,7 @@ function App() {
                       </ErrorBoundary>
                     </AppLayout>
                   </ProtectedRoute>
-                } 
+                }
               />
             </Routes>
           </Router>

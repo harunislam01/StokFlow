@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Search, PlusCircle, User as UserIcon, LogOut, LayoutDashboard,
-  Wifi, WifiOff, RefreshCw, Briefcase, ArrowLeft,
+  Wifi, WifiOff, RefreshCw, ArrowLeft,
   Box, FolderTree, Tags, Truck, BarChart3, History
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -143,10 +143,12 @@ export const Header = () => {
 export const Sidebar = () => {
   const location = useLocation();
 
+  // LÜTFEN DİKKAT: /kategoriler rotasını projende tüm kategorileri listeleyen sayfanın yoluna göre düzelt. 
+  // Eğer tüm kategorileri gösteren özel bir sayfa yoksa Dashboard (Ana Sayfa) çalışır ama tıklayınca oraya atar.
   const navItems = [
     { name: 'Ana Sayfa', path: '/', icon: LayoutDashboard },
     { name: 'Stok', path: '/stok', icon: Box },
-    { name: 'Kategoriler', path: '/kategoriler', icon: FolderTree },
+    { name: 'Kategoriler', path: '/kategoriler', icon: FolderTree }, // Rota Güncellendi
     { name: 'Ürünler', path: '/urunler', icon: Tags },
     { name: 'Tedarikçiler', path: '/tedarikciler', icon: Truck },
     { name: 'Raporlar', path: '/raporlar', icon: BarChart3 },
@@ -217,7 +219,7 @@ export const BottomNav = () => {
 
   const navItems = [
     { name: 'Ana Sayfa', path: '/', icon: LayoutDashboard },
-    { name: 'Ürünler', path: '/urunler', icon: Tags },
+    { name: 'Kategoriler', path: '/categories', icon: FolderTree },
     { name: 'Hızlı Ekle', path: '/product/new', icon: PlusCircle, main: true },
     { name: 'Ara', path: '/search', icon: Search },
     { name: 'Ayarlar', path: '/ayarlar', icon: UserIcon },

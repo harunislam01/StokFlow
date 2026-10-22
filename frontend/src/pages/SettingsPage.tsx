@@ -12,8 +12,9 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
-import { User as UserIcon, Shield, Users, FolderTree, Edit2, Trash2, Plus, LogOut, X, History, ChevronDown, ChevronUp, WifiOff, Bell } from 'lucide-react';
+import { User as UserIcon, Shield, Users, FolderTree, Edit2, Trash2, Plus, LogOut, X, History, ChevronDown, ChevronUp, WifiOff, Bell, AlertTriangle } from 'lucide-react';
 import { apiClient } from '../api/client';
+import { createPortal } from 'react-dom';
 
 const OfflineWarning = ({ sectionName }: { sectionName: string }) => (
   <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white backdrop-blur-sm">
@@ -38,30 +39,18 @@ const formatDateTime = (dateString: string) => {
 
 const getActionBadge = (action: string) => {
   switch (action) {
-    case 'CREATE_PRODUCT':
-      return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">Ürün Eklendi</Badge>;
-    case 'UPDATE_PRODUCT':
-      return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Ürün Güncellendi</Badge>;
-    case 'DELETE_PRODUCT':
-      return <Badge className="bg-red-500 hover:bg-red-600 text-white">Ürün Silindi</Badge>;
-    case 'STOCK_IN':
-      return <Badge className="bg-green-600 hover:bg-green-700 text-white">Stok Girişi</Badge>;
-    case 'STOCK_OUT':
-      return <Badge className="bg-blue-600 hover:bg-blue-700 text-white">Stok Çıkışı</Badge>;
-    case 'CREATE_CATEGORY':
-      return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">Kategori Eklendi</Badge>;
-    case 'UPDATE_CATEGORY':
-      return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Kategori Güncellendi</Badge>;
-    case 'DELETE_CATEGORY':
-      return <Badge className="bg-red-500 hover:bg-red-600 text-white">Kategori Silindi</Badge>;
-    case 'CREATE_USER':
-      return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">Kullanıcı Oluşturuldu</Badge>;
-    case 'UPDATE_USER':
-      return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Kullanıcı Güncellendi</Badge>;
-    case 'DELETE_USER':
-      return <Badge className="bg-red-500 hover:bg-red-600 text-white">Kullanıcı Silindi</Badge>;
-    default:
-      return <Badge variant="secondary">{action}</Badge>;
+    case 'CREATE_PRODUCT': return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">Ürün Eklendi</Badge>;
+    case 'UPDATE_PRODUCT': return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Ürün Güncellendi</Badge>;
+    case 'DELETE_PRODUCT': return <Badge className="bg-red-500 hover:bg-red-600 text-white">Ürün Silindi</Badge>;
+    case 'STOCK_IN': return <Badge className="bg-green-600 hover:bg-green-700 text-white">Stok Girişi</Badge>;
+    case 'STOCK_OUT': return <Badge className="bg-blue-600 hover:bg-blue-700 text-white">Stok Çıkışı</Badge>;
+    case 'CREATE_CATEGORY': return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">Kategori Eklendi</Badge>;
+    case 'UPDATE_CATEGORY': return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Kategori Güncellendi</Badge>;
+    case 'DELETE_CATEGORY': return <Badge className="bg-red-500 hover:bg-red-600 text-white">Kategori Silindi</Badge>;
+    case 'CREATE_USER': return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">Kullanıcı Oluşturuldu</Badge>;
+    case 'UPDATE_USER': return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Kullanıcı Güncellendi</Badge>;
+    case 'DELETE_USER': return <Badge className="bg-red-500 hover:bg-red-600 text-white">Kullanıcı Silindi</Badge>;
+    default: return <Badge variant="secondary">{action}</Badge>;
   }
 };
 
@@ -76,10 +65,11 @@ export const SettingsPage = () => {
     (tabParam as any) || 'profile'
   );
 
+  // Silme Modal State
+  const [deleteCatId, setDeleteCatId] = useState<number | null>(null);
+
   React.useEffect(() => {
-    if (tabParam) {
-      setActiveTab(tabParam as any);
-    }
+    if (tabParam) setActiveTab(tabParam as any);
     if (actionParam === 'new' && tabParam === 'categories') {
       resetCategoryForm();
       setCategoryModalOpen(true);
@@ -93,13 +83,9 @@ export const SettingsPage = () => {
 
   const urlBase64ToUint8Array = (base64String: string) => {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-      .replace(/\-/g, '+')
-      .replace(/_/g, '/');
-
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
     const rawData = window.atob(base64);
     const outputArray = new Uint8Array(rawData.length);
-
     for (let i = 0; i < rawData.length; ++i) {
       outputArray[i] = rawData.charCodeAt(i);
     }
@@ -111,21 +97,17 @@ export const SettingsPage = () => {
       alert('Bu tarayıcı bildirimleri desteklemiyor.');
       return;
     }
-
     try {
       const permission = await Notification.requestPermission();
       setPushPermission(permission);
-
       if (permission === 'granted') {
         const registration = await navigator.serviceWorker.ready;
         const vapidPublicKey = 'BPexBxvsYDImEA7HVk-B5tLwSh62cp8GEyoQ4R3H7KJutWfj4kAP3m0J5JCanh2b0rXUGgQ7JVuRNrfT59NjPiM';
         const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: convertedVapidKey
         });
-
         await apiClient.post('/notifications/subscribe', subscription);
         alert('Web Push bildirim aboneliği başarıyla etkinleştirildi! 🎉');
       }
@@ -151,24 +133,10 @@ export const SettingsPage = () => {
   const [catColorInput, setCatColorInput] = useState('indigo-600');
   const [properties, setProperties] = useState<any[]>([]);
 
-  const addProperty = () => {
-    setProperties(prev => [
-      ...prev,
-      { label: '', type: 'text', required: false, options: '' }
-    ]);
-  };
-
-  const removeProperty = (index: number) => {
-    setProperties(prev => prev.filter((_, i) => i !== index));
-  };
-
+  const addProperty = () => setProperties(prev => [...prev, { label: '', type: 'text', required: false, options: '' }]);
+  const removeProperty = (index: number) => setProperties(prev => prev.filter((_, i) => i !== index));
   const updateProperty = (index: number, key: string, value: any) => {
-    setProperties(prev => prev.map((prop, i) => {
-      if (i === index) {
-        return { ...prop, [key]: value };
-      }
-      return prop;
-    }));
+    setProperties(prev => prev.map((prop, i) => i === index ? { ...prop, [key]: value } : prop));
   };
 
   // Expandable Audit Log State
@@ -176,99 +144,66 @@ export const SettingsPage = () => {
 
   // Queries
   const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['users'],
-    queryFn: getUsers,
+    queryKey: ['users'], queryFn: getUsers,
     enabled: activeTab === 'users' && user?.role === 'ADMIN',
   });
 
   const { data: categories, isLoading: isLoadingCats } = useQuery({
-    queryKey: ['categories'],
-    queryFn: getCategories,
+    queryKey: ['categories'], queryFn: getCategories,
     enabled: activeTab === 'categories' && user?.role === 'ADMIN',
   });
 
   const { data: auditLogs, isLoading: isLoadingAudit } = useQuery({
-    queryKey: ['audit-logs'],
-    queryFn: getAuditLogs,
+    queryKey: ['audit-logs'], queryFn: getAuditLogs,
     enabled: activeTab === 'audit' && user?.role === 'ADMIN',
   });
 
   // User Mutations
   const createUserMutation = useMutation({
     mutationFn: createUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      setUserModalOpen(false);
-      resetUserForm();
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); setUserModalOpen(false); resetUserForm(); },
   });
 
   const updateUserMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateUser(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      setUserModalOpen(false);
-      resetUserForm();
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); setUserModalOpen(false); resetUserForm(); },
   });
 
   const deleteUserMutation = useMutation({
     mutationFn: deleteUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-    },
-    onError: (err: any) => {
-      alert(err?.response?.data?.error || 'Kullanıcı silinirken hata oluştu');
-    }
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onError: (err: any) => alert(err?.response?.data?.error || 'Kullanıcı silinirken hata oluştu'),
   });
-
-
 
   // Category Mutations
   const createCategoryMutation = useMutation({
     mutationFn: createCategory,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      setCategoryModalOpen(false);
-      resetCategoryForm();
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); setCategoryModalOpen(false); resetCategoryForm(); },
   });
 
   const updateCategoryMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateCategory(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      setCategoryModalOpen(false);
-      resetCategoryForm();
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); setCategoryModalOpen(false); resetCategoryForm(); },
   });
 
+  // DÜZELTİLEN SİLME MUTATION'I (Modal Bağlandı)
   const deleteCategoryMutation = useMutation({
-    mutationFn: deleteCategory,
+    mutationFn: (id: number) => deleteCategory(id),
     onSuccess: () => {
       queryClient.invalidateQueries();
+      setDeleteCatId(null); // Başarılıysa modalı kapat
     },
     onError: (err: any) => {
       alert(err.response?.data?.error || 'Kategori silinemedi. Alt kategorisi veya ürünü olabilir.');
     }
   });
 
-  // Helper actions
   const resetUserForm = () => {
-    setEditingUser(null);
-    setUsernameInput('');
-    setPasswordInput('');
-    setRoleInput('USER');
-    setIsActiveInput(true);
+    setEditingUser(null); setUsernameInput(''); setPasswordInput(''); setRoleInput('USER'); setIsActiveInput(true);
   };
 
   const handleEditUser = (u: any) => {
-    setEditingUser(u);
-    setUsernameInput(u.username);
-    setPasswordInput('');
-    setRoleInput(u.role);
-    setIsActiveInput(u.isActive);
-    setUserModalOpen(true);
+    setEditingUser(u); setUsernameInput(u.username); setPasswordInput(''); setRoleInput(u.role); setIsActiveInput(u.isActive); setUserModalOpen(true);
   };
 
   const handleSaveUser = (e: React.FormEvent) => {
@@ -283,50 +218,23 @@ export const SettingsPage = () => {
   };
 
   const resetCategoryForm = () => {
-    setEditingCategory(null);
-    setCatNameInput('');
-    setCatParentIdInput('null');
-    setCatIconInput('Package');
-    setCatColorInput('indigo-600');
-    setProperties([]);
+    setEditingCategory(null); setCatNameInput(''); setCatParentIdInput('null'); setCatIconInput('Package'); setCatColorInput('indigo-600'); setProperties([]);
   };
 
   const handleEditCategory = (c: any) => {
-    setEditingCategory(c);
-    setCatNameInput(c.name);
-    setCatParentIdInput(c.parentId ? String(c.parentId) : 'null');
-    setCatIconInput(c.icon || 'Package');
-    setCatColorInput(c.color || 'indigo-600');
-    setProperties(c.formSchema || []);
-    setCategoryModalOpen(true);
+    setEditingCategory(c); setCatNameInput(c.name); setCatParentIdInput(c.parentId ? String(c.parentId) : 'null'); setCatIconInput(c.icon || 'Package'); setCatColorInput(c.color || 'indigo-600'); setProperties(c.formSchema || []); setCategoryModalOpen(true);
   };
 
   const handleSaveCategory = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate properties
     for (const prop of properties) {
-      if (!prop.label.trim()) {
-        alert('Lütfen tüm özelliklerin adını doldurun.');
-        return;
-      }
+      if (!prop.label.trim()) { alert('Lütfen tüm özelliklerin adını doldurun.'); return; }
     }
-    
-    // Slugify and clean properties
     const cleanedProperties = properties.map(prop => {
       const name = prop.name || prop.label.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
-      const cleaned: any = {
-        name,
-        label: prop.label.trim(),
-        type: prop.type,
-        required: !!prop.required
-      };
+      const cleaned: any = { name, label: prop.label.trim(), type: prop.type, required: !!prop.required };
       if (prop.type === 'select') {
-        cleaned.options = Array.isArray(prop.options) 
-          ? prop.options 
-          : typeof prop.options === 'string'
-            ? prop.options.split(',').map((o: string) => o.trim()).filter((o: string) => o.length > 0)
-            : [];
+        cleaned.options = Array.isArray(prop.options) ? prop.options : typeof prop.options === 'string' ? prop.options.split(',').map((o: string) => o.trim()).filter((o: string) => o.length > 0) : [];
       }
       return cleaned;
     });
@@ -339,11 +247,8 @@ export const SettingsPage = () => {
       formSchema: cleanedProperties
     };
 
-    if (editingCategory) {
-      updateCategoryMutation.mutate({ id: editingCategory.id, data: payload });
-    } else {
-      createCategoryMutation.mutate(payload);
-    }
+    if (editingCategory) updateCategoryMutation.mutate({ id: editingCategory.id, data: payload });
+    else createCategoryMutation.mutate(payload);
   };
 
   const loadSchemaTemplate = (type: 'resistor' | 'capacitor') => {
@@ -363,18 +268,17 @@ export const SettingsPage = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6 pt-4">
       <h1 className="text-2xl font-bold tracking-tight text-slate-800">Ayarlar</h1>
 
-      {/* Tabs */}
+      {/* Tabs (Tırnak Hataları Düzeltildi) */}
       <div className="flex border-b border-slate-200 gap-6 overflow-x-auto pb-1">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
-            activeTab === 'profile'
-              ? 'border-blue-600 text-blue-600
-              : 'border-transparent text-slate-500 hover:text-slate-700
-          }`}
+          className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${activeTab === 'profile'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           Profil & Güvenlik
         </button>
@@ -382,31 +286,28 @@ export const SettingsPage = () => {
           <>
             <button
               onClick={() => setActiveTab('users')}
-              className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
-                activeTab === 'users'
-                  ? 'border-blue-600 text-blue-600
-                  : 'border-transparent text-slate-500 hover:text-slate-700
-              }`}
+              className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${activeTab === 'users'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
             >
               Kullanıcı Yönetimi
             </button>
             <button
               onClick={() => setActiveTab('categories')}
-              className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
-                activeTab === 'categories'
-                  ? 'border-blue-600 text-blue-600
-                  : 'border-transparent text-slate-500 hover:text-slate-700
-              }`}
+              className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${activeTab === 'categories'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
             >
               Kategori Yönetimi
             </button>
             <button
               onClick={() => setActiveTab('audit')}
-              className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
-                activeTab === 'audit'
-                  ? 'border-blue-600 text-blue-600
-                  : 'border-transparent text-slate-500 hover:text-slate-700
-              }`}
+              className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${activeTab === 'audit'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
             >
               Denetim Kayıtları (Audit)
             </button>
@@ -418,11 +319,9 @@ export const SettingsPage = () => {
         {/* Profile Tab */}
         {activeTab === 'profile' && (
           <div className="space-y-6">
-            <Card className="rounded-xl border shadow-sm transition-all duration-150 bg-white border-slate-200/80">
+            <Card className="rounded-xl border shadow-sm bg-white border-slate-200/80">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserIcon className="h-5 w-5 text-blue-600" /> Profil Bilgileri
-                </CardTitle>
+                <CardTitle className="flex items-center gap-2"><UserIcon className="h-5 w-5 text-blue-600" /> Profil Bilgileri</CardTitle>
                 <CardDescription>Oturum açmış kullanıcı detayları</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -441,17 +340,15 @@ export const SettingsPage = () => {
                     </div>
                   </div>
                 </div>
-                <Button variant="destructive" className="flex items-center gap-2 btn-tactile h-11" onClick={logout}>
+                <Button variant="destructive" className="flex items-center gap-2 h-11" onClick={logout}>
                   <LogOut className="h-4 w-4" /> Çıkış Yap
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="rounded-xl border shadow-sm transition-all duration-150 bg-white border-slate-200/80">
+            <Card className="rounded-xl border shadow-sm bg-white border-slate-200/80">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-blue-600" /> Web Push Bildirimleri
-                </CardTitle>
+                <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5 text-blue-600" /> Web Push Bildirimleri</CardTitle>
                 <CardDescription>Depo kritik stok uyarılarını anlık bildirim olarak alın</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -462,11 +359,7 @@ export const SettingsPage = () => {
                       {pushPermission === 'granted' ? 'Etkinleştirildi' : pushPermission === 'denied' ? 'Engellendi (Ayarlardan açın)' : 'Henüz İzin İstenmedi'}
                     </p>
                   </div>
-                  <Button
-                    onClick={handleSubscribePush}
-                    disabled={pushPermission === 'granted'}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs h-11 px-4 btn-tactile rounded-md"
-                  >
+                  <Button onClick={handleSubscribePush} disabled={pushPermission === 'granted'} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs h-11 px-4 rounded-md">
                     {pushPermission === 'granted' ? 'Abonelik Aktif' : 'Bildirimleri Aç'}
                   </Button>
                 </div>
@@ -478,221 +371,190 @@ export const SettingsPage = () => {
         {/* User Management Tab */}
         {activeTab === 'users' && user?.role === 'ADMIN' && (
           !navigator.onLine ? <OfflineWarning sectionName="Kullanıcı Yönetimi" /> : (
-          <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-blue-600" /> Kullanıcılar
-                </CardTitle>
-                <CardDescription>Sisteme kayıtlı kullanıcıları ve rollerini yönetin</CardDescription>
-              </div>
-              <Button onClick={() => { resetUserForm(); setUserModalOpen(true); }} className="flex items-center gap-1">
-                <Plus className="h-4 w-4" /> Kullanıcı Ekle
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {isLoadingUsers ? (
-                <div>Kullanıcı listesi yükleniyor...</div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Kullanıcı Adı</TableHead>
-                      <TableHead>Rol</TableHead>
-                      <TableHead>Durum</TableHead>
-                      <TableHead className="text-right">Aksiyonlar</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users?.map((u) => (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-semibold text-slate-800">{u.username}</TableCell>
-                        <TableCell>
-                          <Badge variant={u.role === 'ADMIN' ? 'default' : 'secondary'}>{u.role}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={u.isActive ? 'outline' : 'destructive'} className={u.isActive ? 'border-emerald-500 text-emerald-500' : ''}>
-                            {u.isActive ? 'Aktif' : 'Pasif'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right space-x-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditUser(u)}>
-                            <Edit2 className="h-4 w-4 text-slate-500 hover:text-blue-600" />
-                          </Button>
-                          {u.username !== 'admin' && (
-                            <Button variant="ghost" size="icon" onClick={() => { if (confirm('Kullanıcıyı silmek istediğinize emin misiniz?')) deleteUserMutation.mutate(u.id); }}>
-                              <Trash2 className="h-4 w-4 text-slate-500 hover:text-red-600" />
-                            </Button>
-                          )}
-                        </TableCell>
+            <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-blue-600" /> Kullanıcılar</CardTitle>
+                  <CardDescription>Sisteme kayıtlı kullanıcıları ve rollerini yönetin</CardDescription>
+                </div>
+                <Button onClick={() => { resetUserForm(); setUserModalOpen(true); }} className="flex items-center gap-1">
+                  <Plus className="h-4 w-4" /> Kullanıcı Ekle
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {isLoadingUsers ? <div>Kullanıcı listesi yükleniyor...</div> : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Kullanıcı Adı</TableHead>
+                        <TableHead>Rol</TableHead>
+                        <TableHead>Durum</TableHead>
+                        <TableHead className="text-right">Aksiyonlar</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {users?.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="font-semibold text-slate-800">{u.username}</TableCell>
+                          <TableCell><Badge variant={u.role === 'ADMIN' ? 'default' : 'secondary'}>{u.role}</Badge></TableCell>
+                          <TableCell>
+                            <Badge variant={u.isActive ? 'outline' : 'destructive'} className={u.isActive ? 'border-emerald-500 text-emerald-500' : ''}>
+                              {u.isActive ? 'Aktif' : 'Pasif'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button variant="ghost" size="icon" onClick={() => handleEditUser(u)}>
+                              <Edit2 className="h-4 w-4 text-slate-500 hover:text-blue-600" />
+                            </Button>
+                            {u.username !== 'admin' && (
+                              <Button variant="ghost" size="icon" onClick={() => { if (confirm('Kullanıcıyı silmek istediğinize emin misiniz?')) deleteUserMutation.mutate(u.id); }}>
+                                <Trash2 className="h-4 w-4 text-slate-500 hover:text-red-600" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           )
         )}
 
         {/* Category Management Tab */}
         {activeTab === 'categories' && user?.role === 'ADMIN' && (
           !navigator.onLine ? <OfflineWarning sectionName="Kategori Yönetimi" /> : (
-          <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <FolderTree className="h-5 w-5 text-blue-600" /> Kategoriler
-                </CardTitle>
-                <CardDescription>Bileşen kategorilerini ve form şemalarını tasarlayın</CardDescription>
-              </div>
-              <Button onClick={() => { resetCategoryForm(); setCategoryModalOpen(true); }} className="flex items-center gap-1">
-                <Plus className="h-4 w-4" /> Kategori Ekle
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {isLoadingCats ? (
-                <div>Kategoriler yükleniyor...</div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Adı</TableHead>
-                      <TableHead>Renk/İkon</TableHead>
-                      <TableHead>Üst Kategori</TableHead>
-                      <TableHead>Dinamik Şema (Fields)</TableHead>
-                      <TableHead className="text-right">Aksiyonlar</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories?.map((c) => {
-                      const parent = categories.find(pc => pc.id === c.parentId);
-                      return (
-                        <TableRow key={c.id}>
-                          <TableCell className="font-semibold text-slate-800">{c.name}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className={`w-3 h-3 rounded-full bg-${c.color || 'slate-500'}`} />
-                              <span className="text-xs text-slate-500">{c.icon || 'Package'}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-slate-500">{parent?.name || 'Ana Kategori'}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{c.formSchema?.length || 0} Parametre</Badge>
-                          </TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button variant="ghost" size="icon" onClick={() => handleEditCategory(c)}>
-                              <Edit2 className="h-4 w-4 text-slate-500 hover:text-blue-600" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => { if (confirm('Kategoriyi silmek istediğinize emin misiniz?')) deleteCategoryMutation.mutate(c.id); }}>
-                              <Trash2 className="h-4 w-4 text-slate-500 hover:text-red-600" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+            <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2"><FolderTree className="h-5 w-5 text-blue-600" /> Kategoriler</CardTitle>
+                  <CardDescription>Bileşen kategorilerini ve form şemalarını tasarlayın</CardDescription>
+                </div>
+                <Button onClick={() => { resetCategoryForm(); setCategoryModalOpen(true); }} className="flex items-center gap-1">
+                  <Plus className="h-4 w-4" /> Kategori Ekle
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {isLoadingCats ? <div>Kategoriler yükleniyor...</div> : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Adı</TableHead>
+                        <TableHead>Renk/İkon</TableHead>
+                        <TableHead>Üst Kategori</TableHead>
+                        <TableHead>Dinamik Şema (Fields)</TableHead>
+                        <TableHead className="text-right">Aksiyonlar</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {categories?.map((c) => {
+                        const parent = categories.find(pc => pc.id === c.parentId);
+                        return (
+                          <TableRow key={c.id}>
+                            <TableCell className="font-semibold text-slate-800">{c.name}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className={`w-3 h-3 rounded-full bg-${c.color || 'slate-500'}`} />
+                                <span className="text-xs text-slate-500">{c.icon || 'Package'}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-slate-500">{parent?.name || 'Ana Kategori'}</TableCell>
+                            <TableCell><Badge variant="outline">{c.formSchema?.length || 0} Parametre</Badge></TableCell>
+                            <TableCell className="text-right space-x-2">
+                              <Button variant="ghost" size="icon" onClick={() => handleEditCategory(c)}>
+                                <Edit2 className="h-4 w-4 text-slate-500 hover:text-blue-600" />
+                              </Button>
+                              {/* SİLME BUTONU MODAL'A BAĞLANDI */}
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteCatId(c.id)}>
+                                <Trash2 className="h-4 w-4 text-slate-500 hover:text-red-600" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           )
         )}
 
-        {/* Audit Logs Tab (Öneri 2) */}
+        {/* Audit Logs Tab */}
         {activeTab === 'audit' && user?.role === 'ADMIN' && (
           !navigator.onLine ? <OfflineWarning sectionName="Denetim Kayıtları (Audit Logs)" /> : (
-          <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5 text-blue-600" /> Sistem Denetim Kayıtları (Audit Logs)
-              </CardTitle>
-              <CardDescription>Sistem üzerinde gerçekleştirilen tüm veri yazma, güncelleme ve silme eylemleri</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingAudit ? (
-                <div>Denetim kayıtları yükleniyor...</div>
-              ) : auditLogs?.length === 0 ? (
-                <div className="text-center py-6 text-sm text-slate-500">Kayıtlı denetim kaydı bulunmuyor.</div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead />
-                      <TableHead>Tarih / Saat</TableHead>
-                      <TableHead>Kullanıcı</TableHead>
-                      <TableHead>Aksiyon</TableHead>
-                      <TableHead>Etkilenen Varlık</TableHead>
-                      <TableHead>IP Adresi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {auditLogs?.map((log) => {
-                      const isExpanded = expandedLogId === log.id;
-                      return (
-                        <React.Fragment key={log.id}>
-                          <TableRow
-                            className="cursor-pointer hover:bg-slate-50/50"
-                            onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
-                          >
-                            <TableCell className="w-6">
-                              {isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
-                            </TableCell>
-                            <TableCell className="font-semibold text-slate-800 text-xs sm:text-sm">
-                              {formatDateTime(log.createdAt)}
-                            </TableCell>
-                            <TableCell className="text-xs sm:text-sm">{log.user?.username || 'Sistem'}</TableCell>
-                            <TableCell>{getActionBadge(log.action)}</TableCell>
-                            <TableCell className="text-slate-500 text-xs font-mono">
-                              {log.entityType} ({log.entityId || 'N/A'})
-                            </TableCell>
-                            <TableCell className="text-slate-400 text-xs font-mono">{log.ipAddress || '127.0.0.1'}</TableCell>
-                          </TableRow>
-                          
-                          {/* Expanded detail box */}
-                          {isExpanded && (
-                            <TableRow className="bg-slate-50/30">
-                              <TableCell colSpan={6} className="p-4 border-t border-slate-200/50">
-                                <div className="grid md:grid-cols-2 gap-4 text-xs font-mono">
-                                  <div>
-                                    <h4 className="font-bold text-slate-400 mb-1 uppercase tracking-wider text-[10px]">Eski Veriler (Old Values)</h4>
-                                    <pre className="p-3 bg-slate-100 rounded-xl overflow-x-auto max-h-60 border border-slate-200/40 text-slate-700">
-                                      {log.oldData ? JSON.stringify(log.oldData, null, 2) : 'Eski Değer Yok'}
-                                    </pre>
-                                  </div>
-                                  <div>
-                                    <h4 className="font-bold text-slate-400 mb-1 uppercase tracking-wider text-[10px]">Yeni Veriler (New Values)</h4>
-                                    <pre className="p-3 bg-slate-100 rounded-xl overflow-x-auto max-h-60 border border-slate-200/40 text-slate-700">
-                                      {log.newData ? JSON.stringify(log.newData, null, 2) : 'Yeni Değer Yok'}
-                                    </pre>
-                                  </div>
-                                </div>
-                              </TableCell>
+            <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><History className="h-5 w-5 text-blue-600" /> Sistem Denetim Kayıtları (Audit Logs)</CardTitle>
+                <CardDescription>Sistem üzerinde gerçekleştirilen tüm veri yazma, güncelleme ve silme eylemleri</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingAudit ? <div>Denetim kayıtları yükleniyor...</div> : auditLogs?.length === 0 ? (
+                  <div className="text-center py-6 text-sm text-slate-500">Kayıtlı denetim kaydı bulunmuyor.</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead />
+                        <TableHead>Tarih / Saat</TableHead>
+                        <TableHead>Kullanıcı</TableHead>
+                        <TableHead>Aksiyon</TableHead>
+                        <TableHead>Etkilenen Varlık</TableHead>
+                        <TableHead>IP Adresi</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {auditLogs?.map((log) => {
+                        const isExpanded = expandedLogId === log.id;
+                        return (
+                          <React.Fragment key={log.id}>
+                            <TableRow className="cursor-pointer hover:bg-slate-50/50" onClick={() => setExpandedLogId(isExpanded ? null : log.id)}>
+                              <TableCell className="w-6">{isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}</TableCell>
+                              <TableCell className="font-semibold text-slate-800 text-xs sm:text-sm">{formatDateTime(log.createdAt)}</TableCell>
+                              <TableCell className="text-xs sm:text-sm">{log.user?.username || 'Sistem'}</TableCell>
+                              <TableCell>{getActionBadge(log.action)}</TableCell>
+                              <TableCell className="text-slate-500 text-xs font-mono">{log.entityType} ({log.entityId || 'N/A'})</TableCell>
+                              <TableCell className="text-slate-400 text-xs font-mono">{log.ipAddress || '127.0.0.1'}</TableCell>
                             </TableRow>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+
+                            {isExpanded && (
+                              <TableRow className="bg-slate-50/30">
+                                <TableCell colSpan={6} className="p-4 border-t border-slate-200/50">
+                                  <div className="grid md:grid-cols-2 gap-4 text-xs font-mono">
+                                    <div>
+                                      <h4 className="font-bold text-slate-400 mb-1 uppercase tracking-wider text-[10px]">Eski Veriler</h4>
+                                      <pre className="p-3 bg-slate-100 rounded-xl overflow-x-auto max-h-60 border border-slate-200/40 text-slate-700">{log.oldData ? JSON.stringify(log.oldData, null, 2) : 'Eski Değer Yok'}</pre>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-bold text-slate-400 mb-1 uppercase tracking-wider text-[10px]">Yeni Veriler</h4>
+                                      <pre className="p-3 bg-slate-100 rounded-xl overflow-x-auto max-h-60 border border-slate-200/40 text-slate-700">{log.newData ? JSON.stringify(log.newData, null, 2) : 'Yeni Değer Yok'}</pre>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           )
         )}
       </div>
 
       {/* User Modal */}
-      {userModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-md bg-white rounded-2xl shadow-xl">
-            <CardHeader className="flex flex-row items-center justify-between">
+      {userModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-md bg-white rounded-3xl shadow-2xl border-none overflow-hidden animate-in zoom-in-95 duration-200">
+            <CardHeader className="flex flex-row items-center justify-between bg-slate-50 border-b border-slate-100 p-6">
               <CardTitle>{editingUser ? 'Kullanıcıyı Düzenle' : 'Kullanıcı Ekle'}</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setUserModalOpen(false)}>
-                <X className="h-4 w-4" />
-              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setUserModalOpen(false)}><X className="h-4 w-4" /></Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <form onSubmit={handleSaveUser} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Kullanıcı Adı</Label>
@@ -705,9 +567,7 @@ export const SettingsPage = () => {
                 <div className="space-y-2">
                   <Label>Rol</Label>
                   <Select value={roleInput} onValueChange={(val: any) => setRoleInput(val)} disabled={editingUser && editingUser.username === 'admin'}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="USER">USER</SelectItem>
                       <SelectItem value="ADMIN">ADMIN</SelectItem>
@@ -722,25 +582,24 @@ export const SettingsPage = () => {
                 )}
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" type="button" onClick={() => setUserModalOpen(false)}>İptal</Button>
-                  <Button type="submit">Kaydet</Button>
+                  <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Kaydet</Button>
                 </div>
               </form>
             </CardContent>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Category Modal */}
-      {categoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-2xl bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
-            <CardHeader className="flex flex-row items-center justify-between">
+      {categoryModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border-none overflow-hidden max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
+            <CardHeader className="flex flex-row items-center justify-between bg-slate-50 border-b border-slate-100 p-6 shrink-0">
               <CardTitle>{editingCategory ? 'Kategoriyi Düzenle' : 'Kategori Ekle'}</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setCategoryModalOpen(false)}>
-                <X className="h-4 w-4" />
-              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setCategoryModalOpen(false)}><X className="h-4 w-4" /></Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6 overflow-y-auto">
               <form onSubmit={handleSaveCategory} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -750,9 +609,7 @@ export const SettingsPage = () => {
                   <div className="space-y-2">
                     <Label>Üst Kategori</Label>
                     <Select value={catParentIdInput} onValueChange={setCatParentIdInput}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="null">Ana Kategori (Yok)</SelectItem>
                         {categories?.filter(c => c.id !== editingCategory?.id).map(c => (
@@ -785,89 +642,79 @@ export const SettingsPage = () => {
 
                   {properties.map((prop, idx) => (
                     <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3 relative group">
-                      <button
-                        type="button"
-                        onClick={() => removeProperty(idx)}
-                        className="absolute top-3 right-3 p-1 rounded-md text-red-500 hover:bg-red-50 transition-colors"
-                        title="Özelliği Sil"
-                      >
+                      <button type="button" onClick={() => removeProperty(idx)} className="absolute top-3 right-3 p-1 rounded-md text-red-500 hover:bg-red-50 transition-colors" title="Özelliği Sil">
                         <Trash2 className="h-4 w-4" />
                       </button>
-
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-1">
                           <Label className="text-xs">Özellik Adı (Etiket)</Label>
-                          <Input
-                            placeholder="örn: Kapasite, Voltaj"
-                            value={prop.label}
-                            onChange={e => updateProperty(idx, 'label', e.target.value)}
-                            required
-                          />
+                          <Input placeholder="örn: Kapasite, Voltaj" value={prop.label} onChange={e => updateProperty(idx, 'label', e.target.value)} required />
                         </div>
-
                         <div className="space-y-1">
                           <Label className="text-xs">Veri Tipi</Label>
-                          <Select
-                            value={prop.type}
-                            onValueChange={val => updateProperty(idx, 'type', val)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Tip Seçin" />
-                            </SelectTrigger>
+                          <Select value={prop.type} onValueChange={val => updateProperty(idx, 'type', val)}>
+                            <SelectTrigger><SelectValue placeholder="Tip Seçin" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="text">Metin (Yazı)</SelectItem>
                               <SelectItem value="number">Sayı</SelectItem>
-                              <SelectItem value="select">Seçim Listesi (Açılır Kutu)</SelectItem>
+                              <SelectItem value="select">Seçim Listesi</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-
                         <div className="flex items-center gap-2 pt-6">
-                          <input
-                            type="checkbox"
-                            id={`req-${idx}`}
-                            checked={prop.required || false}
-                            onChange={e => updateProperty(idx, 'required', e.target.checked)}
-                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <Label htmlFor={`req-${idx}`} className="text-xs font-semibold cursor-pointer select-none">
-                            Zorunlu Alan
-                          </Label>
+                          <input type="checkbox" id={`req-${idx}`} checked={prop.required || false} onChange={e => updateProperty(idx, 'required', e.target.checked)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                          <Label htmlFor={`req-${idx}`} className="text-xs font-semibold cursor-pointer select-none">Zorunlu Alan</Label>
                         </div>
                       </div>
-
                       {prop.type === 'select' && (
                         <div className="space-y-1">
                           <Label className="text-xs">Seçenekler (Virgülle ayırarak yazın)</Label>
-                          <Input
-                            placeholder="örn: 10V, 16V, 25V, 50V"
-                            value={Array.isArray(prop.options) ? prop.options.join(', ') : (prop.options || '')}
-                            onChange={e => updateProperty(idx, 'options', e.target.value)}
-                            required
-                          />
+                          <Input placeholder="örn: 10V, 16V, 25V" value={Array.isArray(prop.options) ? prop.options.join(', ') : (prop.options || '')} onChange={e => updateProperty(idx, 'options', e.target.value)} required />
                         </div>
                       )}
                     </div>
                   ))}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full border-dashed border-2 py-6 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 btn-tactile"
-                    onClick={addProperty}
-                  >
+                  <Button type="button" variant="outline" className="w-full border-dashed border-2 py-6 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 btn-tactile" onClick={addProperty}>
                     <Plus className="h-4 w-4" /> Özellik Ekle
                   </Button>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" type="button" onClick={() => setCategoryModalOpen(false)}>İptal</Button>
-                  <Button type="submit">Kaydet</Button>
+                  <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Kaydet</Button>
                 </div>
               </form>
             </CardContent>
           </Card>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Kategori Silme Onay Modalı (YENİ) */}
+      {deleteCatId !== null && createPortal(
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-sm rounded-3xl shadow-2xl border-none bg-white overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="mx-auto h-16 w-16 bg-red-50 rounded-full flex items-center justify-center mb-2">
+                <AlertTriangle className="h-8 w-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Kategoriyi Sil?</h3>
+              <p className="text-sm text-slate-500">
+                Bu kategoriyi kalıcı olarak silmek istediğinize emin misiniz?
+                Eğer bu kategoriye bağlı ürünler varsa silme işlemi başarısız olacaktır.
+              </p>
+            </div>
+            <div className="bg-slate-50 p-4 border-t border-slate-100 flex gap-3">
+              <Button variant="outline" className="flex-1 h-11 rounded-xl font-semibold border-slate-200 text-slate-600" onClick={() => setDeleteCatId(null)}>
+                İptal
+              </Button>
+              <Button className="flex-1 bg-red-600 hover:bg-red-700 text-white h-11 rounded-xl font-semibold shadow-sm" onClick={() => deleteCategoryMutation.mutate(deleteCatId)} disabled={deleteCategoryMutation.isPending}>
+                {deleteCategoryMutation.isPending ? 'Siliniyor...' : 'Evet, Sil'}
+              </Button>
+            </div>
+          </Card>
+        </div>,
+        document.body
       )}
     </div>
   );

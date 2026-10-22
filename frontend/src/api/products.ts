@@ -11,7 +11,7 @@ export const getCategories = async (): Promise<Category[]> => {
     try {
       const response = await apiClient.get('/categories');
       const categories: Category[] = response.data;
-      
+
       // Update local IndexedDB asynchronously in background without blocking return
       db.categories.bulkPut(categories.map(cat => ({
         id: cat.id,
@@ -22,7 +22,7 @@ export const getCategories = async (): Promise<Category[]> => {
         formSchema: cat.formSchema,
         productCount: cat.productCount
       }))).catch((dbErr: any) => console.error('Failed to write categories to local DB:', dbErr));
-      
+
       return categories;
     } catch (error) {
       console.warn('Online categories fetch failed, falling back to local DB:', error);
@@ -84,7 +84,7 @@ export const getProducts = async (filters?: { categoryId?: number; search?: stri
     const needsRefresh = localProducts.length === 0 || localProducts.some((p: any) => p.attributes?.resistance && p.description && !p.description.includes('Direnç Değeri:'));
     if (needsRefresh) {
       localProducts = mockProducts as any;
-      db.products.clear().then(() => db.products.bulkPut(mockProducts as any)).catch(() => {});
+      db.products.clear().then(() => db.products.bulkPut(mockProducts as any)).catch(() => { });
     }
 
     if (filters?.categoryId) {
@@ -104,7 +104,7 @@ export const getProducts = async (filters?: { categoryId?: number; search?: stri
 
     if (filters?.search) {
       const s = filters.search.toLowerCase();
-      localProducts = localProducts.filter((p: any) => 
+      localProducts = localProducts.filter((p: any) =>
         p.productCode.toLowerCase().includes(s) ||
         p.name.toLowerCase().includes(s) ||
         (p.materialCode && p.materialCode.toLowerCase().includes(s)) ||
@@ -125,7 +125,7 @@ export const getProductById = async (id: number): Promise<Product> => {
     try {
       const response = await apiClient.get(`/products/${id}`);
       const product: Product = response.data;
-      
+
       // Update local cache
       await db.products.put({
         id: product.id,
@@ -142,7 +142,7 @@ export const getProductById = async (id: number): Promise<Product> => {
         createdAt: product.createdAt,
         updatedAt: product.updatedAt
       });
-      
+
       return product;
     } catch (error) {
       console.warn('Online product detail fetch failed, falling back to local DB:', error);
@@ -164,7 +164,7 @@ export const createProduct = async (product: Omit<Product, 'id' | 'createdAt' | 
   if (isOnline()) {
     const response = await apiClient.post('/products', product);
     const saved: Product = response.data;
-    
+
     // Save to local DB
     await db.products.put({
       id: saved.id,
@@ -181,7 +181,7 @@ export const createProduct = async (product: Omit<Product, 'id' | 'createdAt' | 
       createdAt: saved.createdAt,
       updatedAt: saved.updatedAt
     });
-    
+
     return saved;
   }
 
@@ -199,7 +199,7 @@ export const createProduct = async (product: Omit<Product, 'id' | 'createdAt' | 
   };
 
   await db.products.put(newProduct);
-  
+
   // Enqueue in sync queue
   await db.syncQueue.add({
     actionType: 'CREATE',
@@ -222,7 +222,7 @@ export const updateProduct = async (id: number, updates: Partial<Product> & { ve
   if (isOnline()) {
     const response = await apiClient.put(`/products/${id}`, updates);
     const saved: Product = response.data;
-    
+
     // Update local cache
     await db.products.put({
       id: saved.id,
@@ -239,7 +239,7 @@ export const updateProduct = async (id: number, updates: Partial<Product> & { ve
       createdAt: saved.createdAt,
       updatedAt: saved.updatedAt
     });
-    
+
     return saved;
   }
 
@@ -276,7 +276,7 @@ export const deleteProduct = async (id: number): Promise<boolean> => {
 
   // Offline
   await db.products.delete(id);
-  
+
   await db.syncQueue.add({
     actionType: 'DELETE',
     payload: { id },
@@ -288,7 +288,13 @@ export const deleteProduct = async (id: number): Promise<boolean> => {
 };
 
 export const createCategory = async (category: Omit<Category, 'id'>): Promise<Category> => {
-  const response = await apiClient.post('/categories', category);
+  // Eğer parentId string geldiyse number'a çevir, null ise null bırak
+  const payload = {
+    ...category,
+    parentId: category.parentId ? Number(category.parentId) : null
+  };
+
+  const response = await apiClient.post('/categories', payload);
   return response.data;
 };
 
