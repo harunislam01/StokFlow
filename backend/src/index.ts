@@ -14,6 +14,7 @@ import notificationRoutes from './routes/notifications';
 import auditRoutes from './routes/audit';
 import dashboardRoutes from './routes/dashboard';
 import projectRoutes from './routes/projects';
+import supplierRoutes from './routes/suppliers';
 
 import { doubleSubmitCookieCSRF } from './middlewares/csrf';
 
@@ -66,6 +67,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/suppliers', supplierRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });

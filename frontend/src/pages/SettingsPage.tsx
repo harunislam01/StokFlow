@@ -276,8 +276,8 @@ export const SettingsPage = () => {
         <button
           onClick={() => setActiveTab('profile')}
           className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${activeTab === 'profile'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+            ? 'border-blue-600 text-blue-600'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
         >
           Profil & Güvenlik
@@ -287,8 +287,8 @@ export const SettingsPage = () => {
             <button
               onClick={() => setActiveTab('users')}
               className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${activeTab === 'users'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
             >
               Kullanıcı Yönetimi
@@ -296,8 +296,8 @@ export const SettingsPage = () => {
             <button
               onClick={() => setActiveTab('categories')}
               className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${activeTab === 'categories'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
             >
               Kategori Yönetimi
@@ -305,8 +305,8 @@ export const SettingsPage = () => {
             <button
               onClick={() => setActiveTab('audit')}
               className={`pb-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${activeTab === 'audit'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
             >
               Denetim Kayıtları (Audit)

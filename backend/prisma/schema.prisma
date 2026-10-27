@@ -87,6 +87,9 @@ model Product {
   images            ProductImage[]
   projects          ProjectProduct[]
 
+  supplierId  Int?      @map("supplier_id")
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+
   @@index([categoryId])
   @@index([deletedAt])
   @@index([productCode])
@@ -221,4 +224,17 @@ model ProjectProduct {
   @@unique([projectId, productId])
   @@index([productId])
   @@map("project_products")
+}
+
+model Supplier {
+  id          Int      @id @default(autoincrement())
+  name        String
+  contactName String?  @map("contact_name")
+  phone       String?
+  email       String?
+  address     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  products    Product[]
 }
