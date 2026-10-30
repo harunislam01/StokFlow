@@ -20,7 +20,7 @@ const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage').then(m 
 const StockPage = lazy(() => import('./pages/StockPage').then(m => ({ default: m.StockPage })));
 const ProductsListPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.ProductsListPage })));
 const SuppliersPage = lazy(() => import('./pages/SuppliersPage').then(m => ({ default: m.SuppliersPage })));
-const ReportsPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.ReportsPage })));
+const ReportsPage = lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const MovementsPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.MovementsPage })));
 
 import { ErrorBoundary } from './components/ErrorBoundary';
