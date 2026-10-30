@@ -17,7 +17,7 @@ const SearchPage = lazy(() => import('./pages/SearchPage').then(m => ({ default:
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then(m => ({ default: m.ProjectsPage })));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage').then(m => ({ default: m.ProjectDetailPage })));
-const StockPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.StockPage })));
+const StockPage = lazy(() => import('./pages/StockPage').then(m => ({ default: m.StockPage })));
 const ProductsListPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.ProductsListPage })));
 const SuppliersPage = lazy(() => import('./pages/SuppliersPage').then(m => ({ default: m.SuppliersPage })));
 const ReportsPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.ReportsPage })));

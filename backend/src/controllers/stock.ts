@@ -213,3 +213,20 @@ export const getProductMovements = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Stok hareketleri yüklenirken hata oluştu' });
   }
 };
+
+export const getAllStock = async (req: Request, res: Response) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: { deletedAt: null },
+      include: {
+        category: { select: { name: true } },
+        supplier: { select: { name: true } }
+      },
+      orderBy: { name: 'asc' }
+    });
+    res.json(products);
+  } catch (error) {
+    console.error('Get all stock error:', error);
+    res.status(500).json({ error: 'Stok listesi getirilemedi' });
+  }
+};
