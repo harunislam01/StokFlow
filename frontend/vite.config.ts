@@ -13,7 +13,7 @@ export default defineConfig({
         name: 'StockFlow',
         short_name: 'StockFlow',
         description: 'StockFlow Uygulaması',
-        theme_color: '#B45309',
+        theme_color: '#2563eb',
         background_color: '#ffffff',
         display: 'standalone',
         icons: [

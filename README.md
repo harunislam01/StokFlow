@@ -188,6 +188,48 @@ npm run dev
 
 Erişim: `http://localhost:5173`
 
+#### 3. Demo Verisi (sunum / test için)
+```bash
+cd backend
+npm run seed   # idempotent: tekrar çalıştırmak veriyi bozmaz
+```
+
+Seed; kategori ağacını, 5 tedarikçiyi, 50+ gerçekçi elektronik bileşeni, geçmiş stok hareketlerini, kritik stok bildirimlerini ve 3 örnek projeyi ekler.
+
+| Kullanıcı | Şifre | Rol |
+| --- | --- | --- |
+| `admin` | `admin123` | Yönetici |
+| `user` | `user123` | Kullanıcı |
+| `depo` | `depo123` | Kullanıcı (depo) |
+
+> ⚠️ Canlıya almadan önce bu şifreleri değiştirin veya demo kullanıcılarını silin.
+
+---
+
+## 🚢 Production'a Dağıtım
+
+### Docker Compose ile
+```bash
+cp .env.example .env        # POSTGRES_PASSWORD ve gerekirse CORS_ORIGIN doldurun
+# backend/.env.production içine aşağıdaki değerleri girin
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+`backend/.env.production` içinde bulunması gerekenler:
+
+| Değişken | Açıklama |
+| --- | --- |
+| `DATABASE_URL` | Compose tarafından override edilir, yerelde kullanılır |
+| `JWT_SECRET` / `JWT_REFRESH_SECRET` | Mutlaka rastgele ve uzun değerlerle değiştirin |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Web push bildirimleri için (`npx web-push generate-vapid-keys`) |
+| `CORS_ORIGIN` | Frontend farklı domainde ise, örn. `https://stok.firma.com` |
+
+Notlar:
+- Backend ilk açılışta `prisma db push` + idempotent seed çalıştırır, ardından `node dist/index.js` ile başlar.
+- `GET /health` endpoint'i container healthcheck'i olarak kullanılır.
+- Production'da çerezler `secure` işaretlenir; bu yüzden HTTPS zorunludur (`nginx.prod.conf` + Let's Encrypt).
+- Frontend production build'i `/api` same-origin yolunu kullanır; API başka domaindeyse `npm run build` öncesi `VITE_API_URL` verin.
+
 ---
 
 ## 🌐 API Uç Noktaları (Endpoints Summary)

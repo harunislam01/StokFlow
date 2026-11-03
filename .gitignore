@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+# Frontend production build config (no secrets, needed for /api base URL)
+!frontend/.env.production
 
 # Logs
 logs

@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Search, PlusCircle, User as UserIcon, LogOut, LayoutDashboard,
+  Plus, User as UserIcon, LogOut, LayoutDashboard,
   Wifi, WifiOff, RefreshCw, ArrowLeft,
-  Box, FolderTree, Tags, Truck, BarChart3, History
+  Box, FolderTree, Tags, Truck, BarChart3, Briefcase
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/db';
 import logoUrl from '../../assets/logo.png';
 import { ShortcutHelpOverlay } from '../ui/ShortcutHelpOverlay';
+import { QuickActionsSheet } from '../mobile/QuickActionsSheet';
+import { MobileMenuSheet } from '../mobile/MobileMenuSheet';
 
 /* ─────────────────────────────────────
    HEADER
@@ -150,9 +152,9 @@ export const Sidebar = () => {
     { name: 'Stok', path: '/stok', icon: Box },
     { name: 'Kategoriler', path: '/kategoriler', icon: FolderTree }, // Rota Güncellendi
     { name: 'Ürünler', path: '/urunler', icon: Tags },
+    { name: 'Projeler', path: '/projects', icon: Briefcase },
     { name: 'Tedarikçiler', path: '/tedarikciler', icon: Truck },
     { name: 'Raporlar', path: '/raporlar', icon: BarChart3 },
-    { name: 'Hareketler', path: '/hareketler', icon: History },
     { name: 'Ayarlar', path: '/ayarlar', icon: UserIcon },
   ];
 
@@ -216,47 +218,72 @@ export const Sidebar = () => {
 ───────────────────────────────────── */
 export const BottomNav = () => {
   const location = useLocation();
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
 
+  // Mobil alt menü: 5 öğe (standart mobil UX). Tedarikçiler ve Raporlar menüde yer almaz,
+  // bu sayfalara Ayarlar/Kategoriler içinden ulaşılabilir.
   const navItems = [
     { name: 'Ana Sayfa', path: '/', icon: LayoutDashboard },
-    { name: 'Kategoriler', path: '/categories', icon: FolderTree },
-    { name: 'Hızlı Ekle', path: '/product/new', icon: PlusCircle, main: true },
-    { name: 'Ara', path: '/search', icon: Search },
+    { name: 'Kategoriler', path: '/kategoriler', icon: FolderTree },
+    { name: 'Ürünler', path: '/urunler', icon: Tags },
     { name: 'Ayarlar', path: '/ayarlar', icon: UserIcon },
   ];
 
+  const isActive = (path: string) => location.pathname === path
+    || (path !== '/' && location.pathname.startsWith(path));
+
+  const leftItems = navItems.slice(0, 2);
+  const rightItems = navItems.slice(2);
+
+  const renderItem = ({ name, path, icon: Icon }: typeof navItems[number]) => {
+    const active = isActive(path);
+
+    return (
+      <Link key={path} to={path}
+        aria-current={active ? 'page' : undefined}
+        className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[52px] transition-colors active:scale-95
+          ${active
+            ? 'text-blue-600'
+            : 'text-slate-400'
+          }`}
+      >
+        <Icon className={`h-5 w-5 ${active ? 'stroke-[2.4]' : ''}`} />
+        <span className={`text-[9px] font-semibold ${active ? '' : 'font-medium'}`}>{name}</span>
+      </Link>
+    );
+  };
+
   return (
-    <nav className="
-      md:hidden fixed bottom-0 inset-x-0 z-50
-      flex items-center h-[68px] px-2 pb-[env(safe-area-inset-bottom)]
-      border-t border-slate-200 bg-white/95 backdrop-blur-xl shadow-[0_-2px_8px_rgba(15,23,42,0.04)]
-    ">
-      {navItems.map(({ name, path, icon: Icon, main }) => {
-        const active = location.pathname === path
-          || (path !== '/' && location.pathname.startsWith(path));
+    <>
+      <nav className="
+        md:hidden fixed bottom-0 inset-x-0 z-50
+        flex items-center h-[68px] px-2 pb-[env(safe-area-inset-bottom)]
+        border-t border-slate-200 bg-white/95 backdrop-blur-xl shadow-[0_-2px_8px_rgba(15,23,42,0.04)]
+      ">
+        {leftItems.map(renderItem)}
 
-        if (main) return (
-          <Link key={path} to={path} className="flex-1 flex justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/30 -translate-y-3.5 border border-blue-400/20">
-              <Icon className="h-6 w-6" />
-            </div>
-          </Link>
-        );
-
-        return (
-          <Link key={path} to={path}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[48px] transition-colors
-              ${active
-                ? 'text-blue-600'
-                : 'text-slate-400 hover:text-blue-600'
-              }`}
+        {/* Center FAB — quick actions */}
+        <div className="flex-1 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setQuickActionsOpen(true)}
+            aria-label="Hızlı işlemler"
+            aria-expanded={quickActionsOpen}
+            className="
+              flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white
+              shadow-lg shadow-blue-600/30 -translate-y-3.5 border border-blue-400/20
+              active:scale-95 transition-transform duration-150
+            "
           >
-            <Icon className="h-5 w-5" />
-            <span className="text-[9px] font-semibold">{name}</span>
-          </Link>
-        );
-      })}
-    </nav>
+            <Plus className="h-6 w-6" strokeWidth={2.6} />
+          </button>
+        </div>
+
+        {rightItems.map(renderItem)}
+      </nav>
+
+      <QuickActionsSheet open={quickActionsOpen} onClose={() => setQuickActionsOpen(false)} />
+    </>
   );
 };
 
@@ -272,6 +299,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => (
         {children}
       </main>
       <BottomNav />
+      <MobileMenuSheet />
       <ShortcutHelpOverlay />
     </div>
   </div>

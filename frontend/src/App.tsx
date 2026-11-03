@@ -18,7 +18,7 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ defa
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then(m => ({ default: m.ProjectsPage })));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage').then(m => ({ default: m.ProjectDetailPage })));
 const StockPage = lazy(() => import('./pages/StockPage').then(m => ({ default: m.StockPage })));
-const ProductsListPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.ProductsListPage })));
+const ProductsPage = lazy(() => import('./pages/ProductsPage').then(m => ({ default: m.ProductsPage })));
 const SuppliersPage = lazy(() => import('./pages/SuppliersPage').then(m => ({ default: m.SuppliersPage })));
 const ReportsPage = lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const MovementsPage = lazy(() => import('./pages/ComingSoonPage').then(m => ({ default: m.MovementsPage })));
@@ -76,7 +76,7 @@ function App() {
                             <Route path="/" element={<DashboardPage />} />
                             <Route path="/stok" element={<StockPage />} />
                             <Route path="/kategoriler" element={<CategoryListPage />} />
-                            <Route path="/urunler" element={<ProductsListPage />} />
+                            <Route path="/urunler" element={<ProductsPage />} />
                             <Route path="/tedarikciler" element={<SuppliersPage />} />
                             <Route path="/raporlar" element={<ReportsPage />} />
                             <Route path="/hareketler" element={<MovementsPage />} />

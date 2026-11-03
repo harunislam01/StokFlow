@@ -237,12 +237,20 @@ export const addProductToProject = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Geçersiz proje veya ürün ID' });
     }
 
+    if (qty <= 0) {
+      return res.status(400).json({ error: 'Miktar 0\'dan büyük olmalıdır' });
+    }
+
     const pp = await prisma.$transaction(async (tx) => {
       const project = await tx.project.findFirst({ where: { id: projectId, deletedAt: null } });
       if (!project) throw new Error('Proje bulunamadı');
 
       const product = await tx.product.findFirst({ where: { id: pId, deletedAt: null } });
       if (!product) throw new Error('Ürün bulunamadı');
+
+      if (product.stockQuantity < qty) {
+        throw new Error(`INSUFFICIENT_STOCK:${product.stockQuantity}`);
+      }
 
       const existing = await tx.projectProduct.findUnique({
         where: { projectId_productId: { projectId, productId: pId } }
@@ -293,6 +301,11 @@ export const addProductToProject = async (req: Request, res: Response) => {
     res.status(201).json(pp);
   } catch (error: any) {
     console.error('Add product to project error:', error);
+    if (typeof error.message === 'string' && error.message.startsWith('INSUFFICIENT_STOCK:')) {
+      return res.status(400).json({
+        error: `Yetersiz stok. Mevcut stok: ${error.message.split(':')[1]} adet.`
+      });
+    }
     res.status(500).json({ error: error.message || 'Ürün projeye eklenirken hata oluştu' });
   }
 };

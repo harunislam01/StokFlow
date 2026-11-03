@@ -98,7 +98,14 @@ export const getProductById = async (req: Request, res: Response) => {
             }
           }
         },
-        images: true
+        images: true,
+        supplier: { select: { id: true, name: true } },
+        projects: {
+          include: {
+            project: { select: { id: true, name: true, status: true } }
+          },
+          orderBy: { assignedAt: 'desc' }
+        }
       }
     });
 
@@ -114,7 +121,7 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { categoryId, productCode, materialCode, name, description, stockQuantity, minimumStock, location, attributes } = req.body;
+    const { categoryId, productCode, materialCode, name, description, stockQuantity, minimumStock, location, attributes, imageUrl, supplierId } = req.body;
 
     if (!categoryId || !productCode || !name || stockQuantity === undefined) {
       return res.status(400).json({ error: 'Kategori, ürün kodu, isim ve stok miktarı zorunludur' });
@@ -140,6 +147,8 @@ export const createProduct = async (req: Request, res: Response) => {
         minimumStock: minimumStock !== undefined ? parseInt(minimumStock) : 10,
         location: location || null,
         attributes: attributes || {},
+        imageUrl: imageUrl || null,
+        supplierId: supplierId !== undefined && supplierId !== null && supplierId !== '' ? parseInt(supplierId) : null,
         version: 1
       }
     });
@@ -188,7 +197,7 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
-    const { categoryId, productCode, materialCode, name, description, minimumStock, location, attributes, version } = req.body;
+    const { categoryId, productCode, materialCode, name, description, minimumStock, location, attributes, imageUrl, supplierId, version } = req.body;
 
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Geçersiz ürün ID' });
@@ -222,6 +231,10 @@ export const updateProduct = async (req: Request, res: Response) => {
         minimumStock: minimumStock !== undefined ? parseInt(minimumStock) : existingProduct.minimumStock,
         location: location !== undefined ? location : existingProduct.location,
         attributes: attributes !== undefined ? attributes : existingProduct.attributes,
+        imageUrl: imageUrl !== undefined ? (imageUrl || null) : existingProduct.imageUrl,
+        supplierId: supplierId !== undefined
+          ? (supplierId !== null && supplierId !== '' ? parseInt(supplierId) : null)
+          : existingProduct.supplierId,
         version: existingProduct.version + 1 // Increment version
       }
     });

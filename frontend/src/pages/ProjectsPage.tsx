@@ -1,15 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getProjects, createProject, deleteProject,
+  getProjects, createProject, updateProject, deleteProject,
   type CreateProjectPayload, type Project
 } from '../api/projects';
 import { getProducts } from '../api/products';
 import { useTheme } from '../context/ThemeProvider';
 import {
-  Briefcase, Plus, Search, Trash2, ChevronRight,
-  Calendar, Package, CheckSquare, Square, AlertTriangle
+  Briefcase, Plus, Search, Trash2, ChevronLeft, ChevronRight,
+  Calendar, Package, CheckSquare, Square, AlertTriangle, ArrowLeft, Edit2
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -78,7 +78,7 @@ const ProductSelector = ({
           placeholder="Ürün ara..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className={`w-full pl-9 pr-4 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40
+          className={`w-full pl-9 pr-4 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40
             ${isDark
               ? 'bg-slate-800 border-white/10 text-white placeholder-slate-500'
               : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
@@ -99,7 +99,7 @@ const ProductSelector = ({
               <button
                 type="button"
                 onClick={() => onToggle(product)}
-                className="shrink-0 text-amber-500"
+                className="shrink-0 text-blue-600"
               >
                 {sel ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4 text-slate-400" />}
               </button>
@@ -121,7 +121,7 @@ const ProductSelector = ({
                   value={selItem?.quantity || 1}
                   onChange={e => onQuantityChange(product.id, Math.max(1, parseInt(e.target.value) || 1))}
                   onClick={e => e.stopPropagation()}
-                  className={`w-14 text-center text-xs py-1 rounded border focus:outline-none focus:ring-1 focus:ring-amber-500
+                  className={`w-14 text-center text-xs py-1 rounded border focus:outline-none focus:ring-1 focus:ring-blue-500
                     ${isDark ? 'bg-slate-700 border-white/10 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
                 />
               )}
@@ -131,7 +131,7 @@ const ProductSelector = ({
       </div>
 
       {selected.length > 0 && (
-        <p className={`text-xs font-medium ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+        <p className={`text-xs font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
           {selected.length} ürün seçildi
         </p>
       )}
@@ -143,22 +143,24 @@ const ProductSelector = ({
 const ProjectCard = ({
   project,
   isDark,
+  onEdit,
   onDelete
 }: {
   project: Project;
   isDark: boolean;
-  onDelete: (id: number) => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) => (
-  <div className={`rounded-xl border p-5 transition-all duration-150 group relative
+  <div className={`flex flex-col rounded-xl border p-5 transition-all duration-150 group relative
     ${isDark
       ? 'bg-[#1e293b] border-white/[0.07] hover:border-white/[0.14]'
-      : 'bg-white border-slate-200/80 shadow-sm hover:border-amber-200 hover:shadow-md shadow-slate-900/[0.04]'
+      : 'bg-white border-slate-200/80 shadow-sm hover:border-blue-300 hover:shadow-md shadow-slate-900/[0.04]'
     }`}>
 
     <div className="flex items-start justify-between gap-3 mb-3">
       <div className="flex items-center gap-2.5 min-w-0">
-        <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-amber-500/10' : 'bg-amber-50'}`}>
-          <Briefcase className={`h-4 w-4 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
+        <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+          <Briefcase className={`h-4 w-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
         </div>
         <h3 className={`text-sm font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
           {project.name}
@@ -173,7 +175,7 @@ const ProjectCard = ({
       </p>
     )}
 
-    <div className={`flex items-center gap-4 text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
       <span className="flex items-center gap-1">
         <Package className="h-3.5 w-3.5" />
         {project.products.length} Ürün
@@ -185,30 +187,86 @@ const ProjectCard = ({
           {project.endDate ? ` - ${new Date(project.endDate).toLocaleDateString('tr-TR')}` : ''}
         </span>
       )}
+      <div className="ml-auto flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onEdit}
+          title="Projeyi düzenle"
+          className={`h-7 w-7 flex items-center justify-center rounded-md transition-colors btn-tactile
+            ${isDark
+              ? 'text-slate-400 hover:text-blue-400 hover:bg-blue-500/10'
+              : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'
+            }`}
+        >
+          <Edit2 className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          title="Projeyi sil"
+          className={`h-7 w-7 flex items-center justify-center rounded-md transition-colors btn-tactile
+            ${isDark
+              ? 'text-slate-400 hover:text-red-400 hover:bg-red-500/10'
+              : 'text-slate-400 hover:text-red-500 hover:bg-red-50'
+            }`}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
     </div>
 
-    <div className="flex items-center gap-2">
-      <Link
-        to={`/projects/${project.id}`}
-        className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold py-2.5 rounded-lg transition-colors btn-tactile
-          ${isDark
-            ? 'bg-white/[0.05] hover:bg-amber-500/10 text-slate-300 hover:text-amber-400'
-            : 'bg-slate-50 hover:bg-amber-50 text-slate-600 hover:text-amber-600'
-          }`}
-      >
-        Detaylar <ChevronRight className="h-3.5 w-3.5" />
-      </Link>
-      <button
-        onClick={() => onDelete(project.id)}
-        className={`p-2.5 rounded-lg transition-colors btn-tactile
-          ${isDark
-            ? 'text-slate-600 hover:text-red-400 hover:bg-red-500/10'
-            : 'text-slate-400 hover:text-red-500 hover:bg-red-50'
-          }`}
-        title="Projeyi sil"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
+    {/* Atanan ürünler */}
+    <div>
+      <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+        Atanan Ürünler
+      </p>
+      {project.products.length === 0 ? (
+        <div className={`rounded-lg border border-dashed px-3 py-4 text-center text-[11px]
+          ${isDark ? 'border-white/[0.08] text-slate-500' : 'border-slate-200 text-slate-400'}`}>
+          Henüz ürün atanmadı
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-2">
+          {project.products.map(pp => {
+            const isLow = pp.product.stockQuantity <= pp.product.minimumStock;
+            return (
+              <Link
+                key={pp.id}
+                to={`/product/${pp.productId}`}
+                className={`flex items-center gap-2.5 rounded-lg border p-2 transition-colors btn-tactile
+                  ${isDark
+                    ? 'border-white/[0.06] bg-white/[0.03] hover:border-white/[0.14] hover:bg-white/[0.05]'
+                    : 'border-slate-200/80 bg-white hover:border-blue-300 hover:shadow-sm'
+                  }`}
+              >
+                <div className={`h-8 w-8 rounded-md flex items-center justify-center shrink-0
+                  ${isLow
+                    ? isDark ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-500'
+                    : isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'
+                  }`}>
+                  <Package className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[11px] font-mono font-bold truncate ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                    {pp.product.productCode}
+                  </p>
+                  <p className={`text-[10px] truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {pp.product.name}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className={`text-xs font-mono font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                    {pp.quantity} <span className="text-[9px] font-normal">adet</span>
+                  </p>
+                  <p className={`text-[9px] ${isLow ? 'text-red-500 font-semibold' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {isLow ? 'Kritik stok' : `Stok: ${pp.product.stockQuantity}`}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   </div>
 );
@@ -222,6 +280,41 @@ export const ProjectsPage = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
+  // Carousel state
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateCarouselState = () => {
+    const el = carouselRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 8);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
+  };
+
+  // Ekranda yan yana kaç kart görünüyorsa o kadar kart ilerlet
+  const getCardsPerPage = () => {
+    const el = carouselRef.current;
+    const firstCard = el?.firstElementChild as HTMLElement | null;
+    if (!el || !firstCard) return 1;
+    const gap = 16; // gap-4
+    const cardWidth = firstCard.getBoundingClientRect().width;
+    if (!cardWidth) return 1;
+    return Math.max(1, Math.round((el.clientWidth + gap) / (cardWidth + gap)));
+  };
+
+  const scrollCarousel = (direction: 1 | -1) => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const firstCard = el.firstElementChild as HTMLElement | null;
+    const step = firstCard ? firstCard.getBoundingClientRect().width + 16 : el.clientWidth;
+    el.scrollBy({ left: direction * step * getCardsPerPage(), behavior: 'smooth' });
+  };
+
+  const scrollToStart = () => {
+    carouselRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
+  };
+
   // Form state
   const [formName, setFormName] = useState('');
   const [formDesc, setFormDesc] = useState('');
@@ -230,10 +323,32 @@ export const ProjectsPage = () => {
   const [formEnd, setFormEnd] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
 
+  // Edit state
+  const [editProject, setEditProject] = useState<Project | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editStatus, setEditStatus] = useState<'PLANNING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'>('PLANNING');
+  const [editStart, setEditStart] = useState('');
+  const [editEnd, setEditEnd] = useState('');
+
   const { data: projects, isLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: getProjects
   });
+
+  // Mevcut sıralamayı koruyup yeni projeleri her zaman en sona (en sağa) ekle
+  const orderedProjects = useMemo(
+    () => [...(projects ?? [])].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    ),
+    [projects]
+  );
+
+  useEffect(() => {
+    updateCarouselState();
+    window.addEventListener('resize', updateCarouselState);
+    return () => window.removeEventListener('resize', updateCarouselState);
+  }, [projects]);
 
   const { data: products } = useQuery({
     queryKey: ['products'],
@@ -252,6 +367,17 @@ export const ProjectsPage = () => {
     }
   });
 
+  const updateMutation = useMutation({
+    mutationFn: (data: Partial<CreateProjectPayload>) => updateProject(editProject!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setEditProject(null);
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.error || 'Proje güncellenirken hata oluştu');
+    }
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteProject(id),
     onSuccess: () => {
@@ -259,6 +385,15 @@ export const ProjectsPage = () => {
       setDeleteConfirm(null);
     }
   });
+
+  const openEdit = (project: Project) => {
+    setEditProject(project);
+    setEditName(project.name);
+    setEditDesc(project.description || '');
+    setEditStatus(project.status);
+    setEditStart(project.startDate ? project.startDate.split('T')[0] : '');
+    setEditEnd(project.endDate ? project.endDate.split('T')[0] : '');
+  };
 
   const resetForm = () => {
     setFormName('');
@@ -321,7 +456,7 @@ export const ProjectsPage = () => {
         </div>
         <Button
           onClick={() => { resetForm(); setIsCreateOpen(true); }}
-          className="bg-amber-600 hover:bg-amber-700 text-white h-11 px-4 rounded-xl btn-tactile gap-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white h-11 px-4 rounded-xl btn-tactile gap-2"
         >
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">Yeni Proje</span>
@@ -333,12 +468,12 @@ export const ProjectsPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-44 rounded-xl" />)}
         </div>
-      ) : !projects || projects.length === 0 ? (
+      ) : orderedProjects.length === 0 ? (
         <div className={`rounded-xl border-2 border-dashed p-16 text-center
           ${isDark ? 'border-white/[0.08]' : 'border-slate-200'}`}>
           <div className={`h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4
-            ${isDark ? 'bg-amber-500/10' : 'bg-amber-50'}`}>
-            <Briefcase className={`h-8 w-8 ${isDark ? 'text-amber-400' : 'text-amber-500'}`} />
+            ${isDark ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+            <Briefcase className={`h-8 w-8 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
           </div>
           <h3 className={`text-base font-bold mb-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Henüz proje yok
@@ -348,21 +483,70 @@ export const ProjectsPage = () => {
           </p>
           <Button
             onClick={() => { resetForm(); setIsCreateOpen(true); }}
-            className="bg-amber-600 hover:bg-amber-700 text-white h-11 px-6 rounded-xl btn-tactile gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white h-11 px-6 rounded-xl btn-tactile gap-2"
           >
             <Plus className="h-4 w-4" /> Proje Oluştur
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map(project => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              isDark={isDark}
-              onDelete={id => setDeleteConfirm(id)}
-            />
-          ))}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3 min-h-[36px]">
+            <p className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {orderedProjects.length} proje
+            </p>
+            <div className="flex items-center gap-2 shrink-0">
+              {canScrollLeft && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={scrollToStart}
+                  className="h-9 rounded-xl gap-1.5 border-slate-200 text-slate-700 btn-tactile"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> Başa Dön
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => scrollCarousel(-1)}
+                disabled={!canScrollLeft}
+                aria-label="Önceki projeler"
+                className="h-9 w-9 rounded-xl btn-tactile"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => scrollCarousel(1)}
+                disabled={!canScrollRight}
+                aria-label="Sonraki projeler"
+                className="h-9 w-9 rounded-xl btn-tactile"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div
+            ref={carouselRef}
+            onScroll={updateCarouselState}
+            className="flex items-start gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {orderedProjects.map(project => (
+              <div
+                key={project.id}
+                className="snap-start shrink-0 w-[85%] sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]"
+              >
+                <ProjectCard
+                  project={project}
+                  isDark={isDark}
+                  onEdit={() => openEdit(project)}
+                  onDelete={() => setDeleteConfirm(project.id)}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -371,7 +555,7 @@ export const ProjectsPage = () => {
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-amber-500" />
+              <Briefcase className="h-5 w-5 text-blue-600" />
               Yeni Proje Oluştur
             </DialogTitle>
           </DialogHeader>
@@ -400,7 +584,7 @@ export const ProjectsPage = () => {
                 onChange={e => setFormDesc(e.target.value)}
                 placeholder="Proje hakkında kısa bir açıklama..."
                 rows={2}
-                className={`w-full px-3 py-2.5 rounded-lg border text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-500/40
+                className={`w-full px-3 py-2.5 rounded-lg border text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/40
                   ${isDark
                     ? 'bg-slate-800 border-white/10 text-white placeholder-slate-500'
                     : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
@@ -416,7 +600,7 @@ export const ProjectsPage = () => {
               <select
                 value={formStatus}
                 onChange={e => setFormStatus(e.target.value as any)}
-                className={`w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 appearance-none
+                className={`w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none
                   ${isDark
                     ? 'bg-slate-800 border-white/10 text-white'
                     : 'bg-white border-slate-200 text-slate-900'
@@ -482,9 +666,105 @@ export const ProjectsPage = () => {
             <Button
               onClick={handleSubmit}
               disabled={createMutation.isPending || !formName.trim()}
-              className="h-11 bg-amber-600 hover:bg-amber-700 text-white"
+              className="h-11 bg-blue-600 hover:bg-blue-700 text-white"
             >
               {createMutation.isPending ? 'Oluşturuluyor...' : 'Proje Oluştur'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Proje Düzenleme Modalı */}
+      <Dialog open={editProject !== null} onOpenChange={open => { if (!open) setEditProject(null); }}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit2 className="h-5 w-5 text-blue-600" />
+              Projeyi Düzenle
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <label className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                Proje Adı <span className="text-red-500">*</span>
+              </label>
+              <Input value={editName} onChange={e => setEditName(e.target.value)} className="h-11 text-base" />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                Açıklama
+              </label>
+              <textarea
+                value={editDesc}
+                onChange={e => setEditDesc(e.target.value)}
+                rows={2}
+                className={`w-full px-3 py-2.5 rounded-lg border text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/40
+                  ${isDark
+                    ? 'bg-slate-800 border-white/10 text-white placeholder-slate-500'
+                    : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                Durum
+              </label>
+              <select
+                value={editStatus}
+                onChange={e => setEditStatus(e.target.value as any)}
+                className={`w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none
+                  ${isDark
+                    ? 'bg-slate-800 border-white/10 text-white'
+                    : 'bg-white border-slate-200 text-slate-900'
+                  }`}
+              >
+                <option value="PLANNING">Planlama</option>
+                <option value="ACTIVE">Aktif</option>
+                <option value="COMPLETED">Tamamlandı</option>
+                <option value="CANCELLED">İptal</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Başlangıç
+                </label>
+                <Input type="date" value={editStart} onChange={e => setEditStart(e.target.value)} className="h-11" />
+              </div>
+              <div className="space-y-1.5">
+                <label className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Bitiş
+                </label>
+                <Input type="date" value={editEnd} onChange={e => setEditEnd(e.target.value)} className="h-11" />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEditProject(null)}
+              className="h-11"
+              disabled={updateMutation.isPending}
+            >
+              İptal
+            </Button>
+            <Button
+              onClick={() => updateMutation.mutate({
+                name: editName,
+                description: editDesc,
+                status: editStatus,
+                startDate: editStart || undefined,
+                endDate: editEnd || undefined
+              })}
+              disabled={updateMutation.isPending || !editName.trim()}
+              className="h-11 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {updateMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
             </Button>
           </DialogFooter>
         </DialogContent>

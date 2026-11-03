@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProductById, deleteProduct, getCategories } from '../api/products';
 import { getStockMovements, addStockMovement } from '../api/stockMovements';
+import { getSuppliers } from '../api/suppliers';
 import { getProjects, addProductToProject, removeProductFromProject } from '../api/projects';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -74,6 +75,11 @@ export const ProductDetailPage = () => {
     queryFn: getCategories,
   });
 
+  const { data: suppliers } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: getSuppliers,
+  });
+
   const { data: movements } = useQuery({
     queryKey: ['stockMovements', productId],
     queryFn: () => getStockMovements(productId),
@@ -114,6 +120,7 @@ export const ProductDetailPage = () => {
     mutationFn: () => addProductToProject(selectedProjectId!, productId, assignQty),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       setIsProjectDialogOpen(false);
       setSelectedProjectId(null);
       setAssignQty(1);
@@ -123,7 +130,11 @@ export const ProductDetailPage = () => {
 
   const removeFromProjectMutation = useMutation({
     mutationFn: (projId: number) => removeProductFromProject(projId, productId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['product', productId] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product', productId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+    onError: (err: any) => alert(err.response?.data?.error || 'Ürün projeden çıkarılırken hata oluştu')
   });
 
   const handleStockUpdate = () => {
@@ -134,6 +145,7 @@ export const ProductDetailPage = () => {
 
   const productProjects: any[] = (product as any)?.projects || [];
   const availableProjects = (allProjects || []).filter(p => !productProjects.some((pp: any) => pp.projectId === p.id));
+  const assignQtyExceedsStock = assignQty > (product?.stockQuantity ?? 0);
 
   if (isLoading) {
     return (
@@ -156,6 +168,14 @@ export const ProductDetailPage = () => {
   if (!product) return <div className="text-center py-12 text-slate-500">Ürün bulunamadı</div>;
 
   const isLowStock = product.stockQuantity <= (product.minimumStock || 0);
+  const supplierName =
+    (product as any).supplier?.name ||
+    suppliers?.find(s => s.id === (product as any).supplierId)?.name ||
+    'Belirtilmemiş';
+  const productImageUrl =
+    (product as any).imageUrl ||
+    (product as any).images?.find((img: any) => img.isPrimary)?.url ||
+    (product as any).images?.[0]?.url;
 
   if (undoCountdown !== null) {
     return (
@@ -222,9 +242,19 @@ export const ProductDetailPage = () => {
           <Card className="rounded-2xl border-slate-200 shadow-sm bg-white overflow-hidden">
             <div className="flex flex-col sm:flex-row gap-6 p-6 border-b border-slate-100">
               {/* Resim Alanı */}
-              <div className="w-full sm:w-1/3 aspect-square bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-slate-400 shrink-0">
-                <ImageIcon className="h-12 w-12 mb-2 text-slate-300" />
-                <span className="text-xs font-medium">Varsayılan Resim</span>
+              <div className="w-full sm:w-1/3 aspect-square bg-slate-50 rounded-xl border border-slate-100 overflow-hidden shrink-0">
+                {productImageUrl ? (
+                  <img
+                    src={productImageUrl}
+                    alt={product.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                    <ImageIcon className="h-12 w-12 mb-2 text-slate-300" />
+                    <span className="text-xs font-medium">Varsayılan Resim</span>
+                  </div>
+                )}
               </div>
               {/* Temel Bilgiler */}
               <div className="flex-1 space-y-4">
@@ -251,6 +281,10 @@ export const ProductDetailPage = () => {
 
             <CardContent className="pt-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
+                <div>
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tedarikçi</h4>
+                  <p className="text-sm font-bold text-slate-800 mt-1">{supplierName}</p>
+                </div>
                 <div>
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Eklenme Tarihi</h4>
                   <p className="text-sm font-bold text-slate-800 mt-1">{new Date(product.createdAt).toLocaleDateString('tr-TR')}</p>
@@ -319,15 +353,6 @@ export const ProductDetailPage = () => {
               <div className={`text-6xl font-bold font-mono tracking-tighter mb-6 anim-number-tick ${isLowStock ? 'text-red-600' : 'text-slate-900'}`}>
                 {product.stockQuantity}
               </div>
-              <div className="flex justify-center gap-3 mb-6">
-                <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-slate-200 text-slate-600 hover:bg-slate-100" onClick={() => stockMutation.mutate(-1)} disabled={product.stockQuantity <= 0 || stockMutation.isPending}>
-                  <Minus className="h-5 w-5" />
-                </Button>
-                <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-slate-200 text-slate-600 hover:bg-slate-100" onClick={() => stockMutation.mutate(1)} disabled={stockMutation.isPending}>
-                  <Plus className="h-5 w-5" />
-                </Button>
-              </div>
-
               <div className="flex flex-col gap-3 w-full">
                 <Dialog open={isStockDialogOpen} onOpenChange={setIsStockDialogOpen}>
                   <DialogTrigger asChild>
@@ -430,13 +455,19 @@ export const ProductDetailPage = () => {
             {selectedProjectId && (
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-slate-700">Miktar</label>
-                <Input type="number" min={1} value={assignQty} onChange={e => setAssignQty(Math.max(1, parseInt(e.target.value) || 1))} className="h-11 rounded-xl" />
+                <Input type="number" min={1} max={product.stockQuantity} value={assignQty} onChange={e => setAssignQty(Math.max(1, parseInt(e.target.value) || 1))} className="h-11 rounded-xl" />
+                <p className="text-[11px] text-slate-500">
+                  Mevcut stok: <span className="font-mono font-semibold">{product.stockQuantity}</span> adet
+                </p>
+                {assignQtyExceedsStock && (
+                  <p className="text-[11px] font-medium text-red-600">Girilen miktar mevcut stoktan fazla.</p>
+                )}
               </div>
             )}
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setIsProjectDialogOpen(false)} className="h-11 rounded-xl">İptal</Button>
-            <Button onClick={() => assignProjectMutation.mutate()} disabled={!selectedProjectId || assignProjectMutation.isPending} className="h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
+            <Button onClick={() => assignProjectMutation.mutate()} disabled={!selectedProjectId || assignQtyExceedsStock || assignProjectMutation.isPending} className="h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
               {assignProjectMutation.isPending ? 'Atanıyor...' : 'Ata'}
             </Button>
           </DialogFooter>

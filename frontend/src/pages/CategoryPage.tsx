@@ -185,7 +185,16 @@ export const CategoryPage = () => {
                   <Link key={product.id} to={`/product/${product.id}`} className="min-h-[48px] flex h-full">
                     <Card className="p-4 rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] transition-all duration-150 w-full flex items-center group hover:shadow-md hover:border-blue-300 btn-tactile">
                       <div className="h-14 w-14 shrink-0 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center mr-4 overflow-hidden group-hover:border-blue-200 transition-colors">
-                        <Package className="h-6 w-6 text-slate-300 group-hover:text-blue-400 transition-colors" />
+                        {(product as any).imageUrl ? (
+                          <img
+                            src={(product as any).imageUrl}
+                            alt={product.name}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <Package className="h-6 w-6 text-slate-300 group-hover:text-blue-400 transition-colors" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm sm:text-base font-bold text-slate-800 truncate mb-0.5 group-hover:text-blue-700 transition-colors">{product.name}</h3>

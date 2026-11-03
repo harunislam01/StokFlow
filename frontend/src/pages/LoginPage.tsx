@@ -70,7 +70,7 @@ export const LoginPage = () => {
             StockFlow
           </CardTitle>
           <CardDescription className="text-slate-500">
-            Devam etmek için giriş yapın (admin / admin)
+            Devam etmek için giriş yapın
           </CardDescription>
         </CardHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>

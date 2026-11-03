@@ -7,7 +7,9 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: PROD_SECURE_PASSWORD_HERE # Change this to a secure password
+      # Set POSTGRES_PASSWORD in a root .env file before deploying (see .env.example).
+      # Use a URL-safe value (letters, digits, - and _) so it fits in DATABASE_URL.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - create a .env file}
       POSTGRES_DB: electromtech_stok
     # Bind database port only to localhost (127.0.0.1) for security.
     # This prevents direct access to the database from the public internet.
@@ -32,7 +34,10 @@ services:
       - ./backend/.env.production
     environment:
       PORT: 5000
-      DATABASE_URL: postgresql://postgres:PROD_SECURE_PASSWORD_HERE@postgres:5432/electromtech_stok?schema=public
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/electromtech_stok?schema=public
+      # Leave empty when the frontend is served through the same origin (Nginx /api proxy).
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
     expose:
       - "5000"
     depends_on:
@@ -51,6 +56,11 @@ services:
       - "80:80"
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   postgres_data_prod:
