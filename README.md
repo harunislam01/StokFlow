@@ -27,42 +27,6 @@ Depo ve saha çalışanlarının zayıf veya kesintili internet bağlantıların
 
 ---
 
-## 🖼️ Ekran Görüntüleri / Screenshots
-
-<div align="center">
-
-### 🔒 1. Güvenli Giriş Ekranı (Login Page)
-![Giriş Ekranı](docs/screenshots/login.jpg)
-
-<br/>
-
-### 📊 2. Canlı Kontrol Paneli (Interactive Dashboard — Açık Tema)
-![Dashboard Ekranı](docs/screenshots/dashboard.jpg)
-
-<br/>
-
-### 🌙 3. Gece Modu (Dark Mode Dashboard)
-![Gece Modu Dashboard Ekranı](docs/screenshots/dashboard_dark.png)
-
-<br/>
-
-### 📋 4. Yeni Proje Oluşturma & Malzeme Seçim Modalı
-![Yeni Proje Oluştur Modalı](docs/screenshots/new_project_modal.png)
-
-<br/>
-
-### 📜 5. Sistem Denetim Kayıtları (Audit Logs)
-![Sistem Denetim Kayıtları](docs/screenshots/audit_logs.png)
-
-<br/>
-
-### ⚙️ 6. Ayarlar & Web Push Bildirimleri (Settings & Profile)
-![Profil ve Bildirim Ayarları](docs/screenshots/settings_profile.png)
-
-</div>
-
----
-
 ## ✨ Öne Çıkan Özellikler
 
 ### 📊 1. Canlı & İnteraktif Dashboard (Analytics)
