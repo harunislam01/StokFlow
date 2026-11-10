@@ -8,12 +8,14 @@ import {
   deleteProject,
   addProductToProject,
   removeProductFromProject,
-  updateProjectProduct
+  updateProjectProduct,
+  downloadProjectExcel
 } from '../controllers/projects';
 
 const router = Router();
 
 router.get('/', authenticateJWT, getProjects);
+router.get('/:id/excel', authenticateJWT, downloadProjectExcel);
 router.get('/:id', authenticateJWT, getProjectById);
 router.post('/', authenticateJWT, createProject);
 router.put('/:id', authenticateJWT, updateProject);

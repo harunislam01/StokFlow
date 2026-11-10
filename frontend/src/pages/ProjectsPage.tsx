@@ -2,20 +2,57 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getProjects, createProject, updateProject, deleteProject,
+  getProjects, createProject, updateProject, deleteProject, downloadProjectExcel,
   type CreateProjectPayload, type Project
 } from '../api/projects';
 import { getProducts } from '../api/products';
 import { useTheme } from '../context/ThemeProvider';
 import {
   Briefcase, Plus, Search, Trash2, ChevronLeft, ChevronRight,
-  Calendar, Package, CheckSquare, Square, AlertTriangle, ArrowLeft, Edit2
+  Calendar, Package, CheckSquare, Square, AlertTriangle, ArrowLeft, Edit2,
+  FileSpreadsheet, Upload, X
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
 import type { Product } from '../types';
+
+/* ── Excel Dosyası ───────────────────────────────── */
+interface ExcelAttachment {
+  name: string;
+  type: string;
+  data: string;
+}
+
+const ACCEPTED_EXCEL_PATTERN = /\.(xls|xlsx|csv)$/i;
+const MAX_EXCEL_SIZE = 4 * 1024 * 1024; // express.json limit is 5mb (base64 grows ~33%)
+
+const readExcelFile = (file: File): Promise<ExcelAttachment> => {
+  return new Promise((resolve, reject) => {
+    if (!ACCEPTED_EXCEL_PATTERN.test(file.name)) {
+      reject(new Error('Sadece .xls, .xlsx veya .csv dosyaları yüklenebilir'));
+      return;
+    }
+    if (file.size > MAX_EXCEL_SIZE) {
+      reject(new Error('Dosya boyutu en fazla 4 MB olabilir'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      resolve({
+        name: file.name,
+        type: file.type || (/\.csv$/i.test(file.name) ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+        data: base64
+      });
+    };
+    reader.onerror = () => reject(new Error('Dosya okunamadı'));
+    reader.readAsDataURL(file);
+  });
+};
 
 /* ── Durum Badge ─────────────────────────────────── */
 const STATUS_CONFIG = {
@@ -144,11 +181,13 @@ const ProjectCard = ({
   project,
   isDark,
   onEdit,
+  onDownloadExcel,
   onDelete
 }: {
   project: Project;
   isDark: boolean;
   onEdit: () => void;
+  onDownloadExcel: () => void;
   onDelete: () => void;
 }) => (
   <div className={`flex flex-col rounded-xl border p-5 transition-all duration-150 group relative
@@ -199,6 +238,21 @@ const ProjectCard = ({
             }`}
         >
           <Edit2 className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={onDownloadExcel}
+          disabled={!project.hasExcel}
+          title={project.hasExcel ? 'Excel dosyasını indir' : 'Excel dosyası yüklenmemiş'}
+          className={`h-7 w-7 flex items-center justify-center rounded-md transition-colors btn-tactile
+            ${!project.hasExcel
+              ? isDark ? 'text-slate-600 cursor-not-allowed' : 'text-slate-300 cursor-not-allowed'
+              : isDark
+                ? 'text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10'
+                : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+            }`}
+        >
+          <FileSpreadsheet className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
@@ -322,6 +376,7 @@ export const ProjectsPage = () => {
   const [formStart, setFormStart] = useState('');
   const [formEnd, setFormEnd] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [formExcel, setFormExcel] = useState<ExcelAttachment | null>(null);
 
   // Edit state
   const [editProject, setEditProject] = useState<Project | null>(null);
@@ -330,6 +385,7 @@ export const ProjectsPage = () => {
   const [editStatus, setEditStatus] = useState<'PLANNING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'>('PLANNING');
   const [editStart, setEditStart] = useState('');
   const [editEnd, setEditEnd] = useState('');
+  const [editExcel, setEditExcel] = useState<ExcelAttachment | null>(null);
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ['projects'],
@@ -393,6 +449,7 @@ export const ProjectsPage = () => {
     setEditStatus(project.status);
     setEditStart(project.startDate ? project.startDate.split('T')[0] : '');
     setEditEnd(project.endDate ? project.endDate.split('T')[0] : '');
+    setEditExcel(null);
   };
 
   const resetForm = () => {
@@ -402,6 +459,20 @@ export const ProjectsPage = () => {
     setFormStart('');
     setFormEnd('');
     setSelectedProducts([]);
+    setFormExcel(null);
+  };
+
+  const handleExcelChange = async (e: React.ChangeEvent<HTMLInputElement>, target: 'create' | 'edit') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const attachment = await readExcelFile(file);
+      if (target === 'create') setFormExcel(attachment);
+      else setEditExcel(attachment);
+    } catch (err: any) {
+      alert(err.message || 'Excel dosyası seçilemedi');
+    }
+    e.target.value = '';
   };
 
   const handleToggleProduct = (product: Product) => {
@@ -438,7 +509,12 @@ export const ProjectsPage = () => {
       productIds: selectedProducts.map(s => ({
         productId: s.productId,
         quantity: s.quantity
-      }))
+      })),
+      ...(formExcel ? {
+        excelFileName: formExcel.name,
+        excelFileType: formExcel.type,
+        excelFileData: formExcel.data
+      } : {})
     });
   };
 
@@ -542,6 +618,12 @@ export const ProjectsPage = () => {
                   project={project}
                   isDark={isDark}
                   onEdit={() => openEdit(project)}
+                  onDownloadExcel={() => {
+                    if (!project.hasExcel) return;
+                    downloadProjectExcel(project.id, project.excelFileName).catch((err: any) =>
+                      alert(err.response?.data?.error || 'Excel dosyası indirilemedi')
+                    );
+                  }}
                   onDelete={() => setDeleteConfirm(project.id)}
                 />
               </div>
@@ -652,6 +734,43 @@ export const ProjectsPage = () => {
                 isDark={isDark}
               />
             </div>
+
+            {/* Excel Dosyası */}
+            <div className="space-y-1.5">
+              <label className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                Excel Dosyası <span className={`font-normal ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>(opsiyonel)</span>
+              </label>
+              {formExcel ? (
+                <div className={`flex items-center gap-2 rounded-lg border p-2.5
+                  ${isDark ? 'border-white/10 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span className={`flex-1 min-w-0 truncate text-xs font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                    {formExcel.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFormExcel(null)}
+                    title="Dosyayı kaldır"
+                    className={`h-6 w-6 flex items-center justify-center rounded-md transition-colors
+                      ${isDark ? 'text-slate-400 hover:text-red-400 hover:bg-red-500/10' : 'text-slate-400 hover:text-red-500 hover:bg-red-50'}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <label className={`flex items-center justify-center gap-2 rounded-lg border border-dashed p-3 cursor-pointer text-xs font-semibold transition-colors
+                  ${isDark
+                    ? 'border-white/15 text-slate-300 hover:border-emerald-500/50 hover:bg-emerald-500/5'
+                    : 'border-slate-300 text-slate-600 hover:border-emerald-400 hover:bg-emerald-50/40'
+                  }`}>
+                  <Upload className="h-4 w-4" /> Excel Dosyası Yükle
+                  <input type="file" accept=".xls,.xlsx,.csv" className="hidden" onChange={e => handleExcelChange(e, 'create')} />
+                </label>
+              )}
+              <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                Sadece .xls, .xlsx ve .csv dosyaları (en fazla 4 MB).
+              </p>
+            </div>
           </div>
 
           <DialogFooter className="gap-2">
@@ -742,6 +861,55 @@ export const ProjectsPage = () => {
                 <Input type="date" value={editEnd} onChange={e => setEditEnd(e.target.value)} className="h-11" />
               </div>
             </div>
+
+            <div className="space-y-1.5">
+              <label className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                Excel Dosyası
+              </label>
+              {editExcel ? (
+                <div className={`flex items-center gap-2 rounded-lg border p-2.5
+                  ${isDark ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-emerald-200 bg-emerald-50/50'}`}>
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span className={`flex-1 min-w-0 truncate text-xs font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                    {editExcel.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setEditExcel(null)}
+                    title="Yeni dosyayı kaldır"
+                    className={`h-6 w-6 flex items-center justify-center rounded-md transition-colors
+                      ${isDark ? 'text-slate-400 hover:text-red-400 hover:bg-red-500/10' : 'text-slate-400 hover:text-red-500 hover:bg-red-50'}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : editProject?.excelFileName ? (
+                <div className={`flex items-center gap-2 rounded-lg border p-2.5
+                  ${isDark ? 'border-white/10 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span className={`flex-1 min-w-0 truncate text-xs font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                    {editProject.excelFileName}
+                  </span>
+                  <label className={`text-[11px] font-semibold cursor-pointer shrink-0
+                    ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700 hover:underline'}`}>
+                    Değiştir
+                    <input type="file" accept=".xls,.xlsx,.csv" className="hidden" onChange={e => handleExcelChange(e, 'edit')} />
+                  </label>
+                </div>
+              ) : (
+                <label className={`flex items-center justify-center gap-2 rounded-lg border border-dashed p-3 cursor-pointer text-xs font-semibold transition-colors
+                  ${isDark
+                    ? 'border-white/15 text-slate-300 hover:border-emerald-500/50 hover:bg-emerald-500/5'
+                    : 'border-slate-300 text-slate-600 hover:border-emerald-400 hover:bg-emerald-50/40'
+                  }`}>
+                  <Upload className="h-4 w-4" /> Excel Dosyası Yükle
+                  <input type="file" accept=".xls,.xlsx,.csv" className="hidden" onChange={e => handleExcelChange(e, 'edit')} />
+                </label>
+              )}
+              <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                Sadece .xls, .xlsx ve .csv dosyaları (en fazla 4 MB).
+              </p>
+            </div>
           </div>
 
           <DialogFooter className="gap-2">
@@ -759,7 +927,12 @@ export const ProjectsPage = () => {
                 description: editDesc,
                 status: editStatus,
                 startDate: editStart || undefined,
-                endDate: editEnd || undefined
+                endDate: editEnd || undefined,
+                ...(editExcel ? {
+                  excelFileName: editExcel.name,
+                  excelFileType: editExcel.type,
+                  excelFileData: editExcel.data
+                } : {})
               })}
               disabled={updateMutation.isPending || !editName.trim()}
               className="h-11 bg-blue-600 hover:bg-blue-700 text-white"

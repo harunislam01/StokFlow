@@ -97,8 +97,12 @@ export const CategoryPage = () => {
             <Skeleton className="h-12 w-12 rounded-xl" />
           ) : (
             category && (
-              <div className="p-3 rounded-xl bg-blue-50">
-                {IconComponent && <IconComponent className="h-6 w-6 text-blue-600" />}
+              <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center overflow-hidden shrink-0">
+                {category.imageUrl ? (
+                  <img src={category.imageUrl} alt={category.name} className="h-full w-full object-cover" />
+                ) : (
+                  IconComponent && <IconComponent className="h-6 w-6 text-blue-600" />
+                )}
               </div>
             )
           )}
@@ -125,8 +129,12 @@ export const CategoryPage = () => {
             return (
               <Link key={cat.id} to={`/category/${cat.id}`} className="min-h-[48px] flex">
                 <Card className="rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] transition-all duration-150 p-4 w-full flex flex-col justify-center items-center text-center group cursor-pointer hover:shadow-md hover:border-blue-200 btn-tactile">
-                  <div className="p-3 rounded-xl bg-blue-50 mb-3 group-hover:scale-105 transition-transform duration-150">
-                    {SubIcon && <SubIcon className="h-6 w-6 text-blue-600" />}
+                  <div className="h-12 w-12 rounded-xl bg-blue-50 mb-3 flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-150">
+                    {cat.imageUrl ? (
+                      <img src={cat.imageUrl} alt={cat.name} className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      SubIcon && <SubIcon className="h-6 w-6 text-blue-600" />
+                    )}
                   </div>
                   <h3 className="font-semibold text-xs sm:text-sm text-slate-800">{cat.name}</h3>
                 </Card>

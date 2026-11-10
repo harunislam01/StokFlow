@@ -49,6 +49,7 @@ model Category {
   name        String
   parentId    Int?       @map("parent_id")
   icon        String?
+  imageUrl    String?    @map("image_url")
   color       String?
   formSchema  Json       @map("form_schema")
   createdAt   DateTime   @default(now()) @map("created_at")
@@ -195,9 +196,12 @@ model Project {
   name        String
   description String?
   status      ProjectStatus @default(PLANNING)
-  startDate   DateTime?     @map("start_date")
-  endDate     DateTime?     @map("end_date")
-  createdById Int?          @map("created_by_id")
+  startDate     DateTime?     @map("start_date")
+  endDate       DateTime?     @map("end_date")
+  excelFileName String?       @map("excel_file_name")
+  excelFileType String?       @map("excel_file_type")
+  excelFileData String?       @map("excel_file_data")
+  createdById   Int?          @map("created_by_id")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   deletedAt   DateTime?     @map("deleted_at")
@@ -225,6 +229,22 @@ model ProjectProduct {
   @@unique([projectId, productId])
   @@index([productId])
   @@map("project_products")
+}
+
+model MonthlyReport {
+  id            Int      @id @default(autoincrement())
+  year          Int
+  month         Int
+  totalIn       Int      @default(0) @map("total_in")
+  totalOut      Int      @default(0) @map("total_out")
+  movementCount Int      @default(0) @map("movement_count")
+  data          Json
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([year, month])
+  @@index([year, month])
+  @@map("monthly_reports")
 }
 
 model Supplier {

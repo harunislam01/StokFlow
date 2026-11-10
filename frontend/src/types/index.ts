@@ -2,6 +2,7 @@ export interface Category {
   id: number;
   name: string;
   icon?: string | null;
+  imageUrl?: string | null;
   color?: string | null;
   parentId?: number | null;
   formSchema?: any;
@@ -86,6 +87,9 @@ export interface Project {
   status: 'PLANNING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
   startDate?: string | null;
   endDate?: string | null;
+  excelFileName?: string | null;
+  excelFileType?: string | null;
+  hasExcel?: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;

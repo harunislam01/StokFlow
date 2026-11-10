@@ -5,6 +5,7 @@ export interface LocalCategory {
   name: string;
   parentId?: number | null;
   icon?: string | null;
+  imageUrl?: string | null;
   color?: string | null;
   formSchema?: any;
   productCount?: number;

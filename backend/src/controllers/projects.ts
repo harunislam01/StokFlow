@@ -12,6 +12,21 @@ const productSelectFields = {
   category: { select: { name: true, icon: true } }
 };
 
+const EXCEL_FILE_PATTERN = /\.(xls|xlsx|csv)$/i;
+
+const excelMimeType = (fileName: string, storedType?: string | null) => {
+  if (storedType) return storedType;
+  if (/\.csv$/i.test(fileName)) return 'text/csv';
+  if (/\.xls$/i.test(fileName)) return 'application/vnd.ms-excel';
+  return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+};
+
+// Never expose the base64 payload in JSON responses; expose a lightweight flag instead.
+const sanitizeProject = <T extends { excelFileData?: string | null }>(project: T) => {
+  const { excelFileData, ...rest } = project;
+  return { ...rest, hasExcel: Boolean(excelFileData) };
+};
+
 // GET /api/projects
 export const getProjects = async (req: Request, res: Response) => {
   try {
@@ -28,7 +43,7 @@ export const getProjects = async (req: Request, res: Response) => {
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(projects);
+    res.json(projects.map(sanitizeProject));
   } catch (error) {
     console.error('Get projects error:', error);
     res.status(500).json({ error: 'Projeler yüklenirken hata oluştu' });
@@ -56,7 +71,7 @@ export const getProjectById = async (req: Request, res: Response) => {
     });
 
     if (!project) return res.status(404).json({ error: 'Proje bulunamadı' });
-    res.json(project);
+    res.json(sanitizeProject(project));
   } catch (error) {
     console.error('Get project by id error:', error);
     res.status(500).json({ error: 'Proje yüklenirken hata oluştu' });
@@ -67,10 +82,14 @@ export const getProjectById = async (req: Request, res: Response) => {
 export const createProject = async (req: Request, res: Response) => {
   try {
     const authReq = req as AuthenticatedRequest;
-    const { name, description, status, startDate, endDate, productIds } = req.body;
+    const { name, description, status, startDate, endDate, productIds, excelFileName, excelFileData, excelFileType } = req.body;
 
     if (!name || name.trim() === '') {
       return res.status(400).json({ error: 'Proje adı zorunludur' });
+    }
+
+    if (excelFileData && (!excelFileName || !EXCEL_FILE_PATTERN.test(excelFileName))) {
+      return res.status(400).json({ error: 'Sadece .xls, .xlsx veya .csv dosyaları yüklenebilir' });
     }
 
     const productsData = Array.isArray(productIds) ? productIds : [];
@@ -83,6 +102,9 @@ export const createProject = async (req: Request, res: Response) => {
           status: status || 'PLANNING',
           startDate: startDate ? new Date(startDate) : null,
           endDate: endDate ? new Date(endDate) : null,
+          excelFileName: excelFileData ? excelFileName : null,
+          excelFileType: excelFileData ? (excelFileType || null) : null,
+          excelFileData: excelFileData || null,
           createdById: authReq.user?.id || null,
           products: {
             create: productsData.map((p: { productId: number; quantity?: number; note?: string }) => ({
@@ -140,7 +162,7 @@ export const createProject = async (req: Request, res: Response) => {
       return newProj;
     });
 
-    res.status(201).json(project);
+    res.status(201).json(sanitizeProject(project));
   } catch (error) {
     console.error('Create project error:', error);
     res.status(500).json({ error: 'Proje oluşturulurken hata oluştu' });
@@ -157,7 +179,20 @@ export const updateProject = async (req: Request, res: Response) => {
     const existing = await prisma.project.findFirst({ where: { id, deletedAt: null } });
     if (!existing) return res.status(404).json({ error: 'Proje bulunamadı' });
 
-    const { name, description, status, startDate, endDate } = req.body;
+    const { name, description, status, startDate, endDate, excelFileName, excelFileData, excelFileType } = req.body;
+
+    if (excelFileData && (!excelFileName || !EXCEL_FILE_PATTERN.test(excelFileName))) {
+      return res.status(400).json({ error: 'Sadece .xls, .xlsx veya .csv dosyaları yüklenebilir' });
+    }
+
+    // Only touch the attachment when a new file (or an explicit clear) is sent.
+    const excelUpdate = excelFileData !== undefined
+      ? {
+          excelFileName: excelFileData ? excelFileName : null,
+          excelFileType: excelFileData ? (excelFileType || null) : null,
+          excelFileData: excelFileData || null
+        }
+      : {};
 
     const updated = await prisma.project.update({
       where: { id },
@@ -166,7 +201,8 @@ export const updateProject = async (req: Request, res: Response) => {
         description: description !== undefined ? description : existing.description,
         status: status !== undefined ? status : existing.status,
         startDate: startDate !== undefined ? (startDate ? new Date(startDate) : null) : existing.startDate,
-        endDate: endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate
+        endDate: endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate,
+        ...excelUpdate
       },
       include: {
         products: { include: { product: { select: productSelectFields } } },
@@ -185,10 +221,41 @@ export const updateProject = async (req: Request, res: Response) => {
       }
     });
 
-    res.json(updated);
+    res.json(sanitizeProject(updated));
   } catch (error) {
     console.error('Update project error:', error);
     res.status(500).json({ error: 'Proje güncellenirken hata oluştu' });
+  }
+};
+
+// GET /api/projects/:id/excel
+export const downloadProjectExcel = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'Geçersiz proje ID' });
+
+    const project = await prisma.project.findFirst({
+      where: { id, deletedAt: null },
+      select: { excelFileName: true, excelFileType: true, excelFileData: true }
+    });
+
+    if (!project?.excelFileData || !project.excelFileName) {
+      return res.status(404).json({ error: 'Bu projeye yüklenmiş bir Excel dosyası bulunmuyor' });
+    }
+
+    const fileBuffer = Buffer.from(project.excelFileData, 'base64');
+    const asciiName = project.excelFileName.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '_');
+
+    res.setHeader('Content-Type', excelMimeType(project.excelFileName, project.excelFileType));
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(project.excelFileName)}`
+    );
+    res.setHeader('Content-Length', fileBuffer.length);
+    res.send(fileBuffer);
+  } catch (error) {
+    console.error('Download project excel error:', error);
+    res.status(500).json({ error: 'Excel dosyası indirilirken hata oluştu' });
   }
 };
 

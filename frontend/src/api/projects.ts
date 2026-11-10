@@ -26,6 +26,9 @@ export interface Project {
   status: 'PLANNING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
   startDate?: string | null;
   endDate?: string | null;
+  excelFileName?: string | null;
+  excelFileType?: string | null;
+  hasExcel?: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
@@ -40,6 +43,9 @@ export interface CreateProjectPayload {
   startDate?: string;
   endDate?: string;
   productIds?: Array<{ productId: number; quantity: number; note?: string }>;
+  excelFileName?: string;
+  excelFileType?: string;
+  excelFileData?: string;
 }
 
 export const getProjects = async (): Promise<Project[]> => {
@@ -64,6 +70,18 @@ export const updateProject = async (id: number, data: Partial<CreateProjectPaylo
 
 export const deleteProject = async (id: number): Promise<void> => {
   await apiClient.delete(`/projects/${id}`);
+};
+
+export const downloadProjectExcel = async (id: number, fileName?: string | null): Promise<void> => {
+  const res = await apiClient.get(`/projects/${id}/excel`, { responseType: 'blob' });
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName || 'proje-dosyasi.xlsx';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 };
 
 export const addProductToProject = async (

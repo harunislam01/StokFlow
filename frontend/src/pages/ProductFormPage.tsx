@@ -143,7 +143,12 @@ export const ProductFormPage = () => {
     onSuccess: (savedProduct) => {
       queryClient.invalidateQueries();
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
-      navigate(`/product/${savedProduct.id}`);
+      // Düzenleme sonrası ürünün bağlı olduğu kategori sayfasına dön
+      if (isEditing) {
+        navigate(`/category/${savedProduct.categoryId}`);
+      } else {
+        navigate(`/product/${savedProduct.id}`);
+      }
     },
     onError: (error: any) => {
       const msg = error.response?.data?.error || error.message || 'Ürün kaydedilirken bir hata oluştu';

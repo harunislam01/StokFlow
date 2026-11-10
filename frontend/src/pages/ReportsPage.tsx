@@ -1,55 +1,99 @@
-import { useQuery } from '@tanstack/react-query';
-import { getMonthlyReport } from '../api/reports';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    getMonthlyReport,
+    getReportArchives,
+    createReportArchive,
+    getReportArchiveById,
+    type ReportArchiveSummary
+} from '../api/reports';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
 import { Skeleton } from '../components/ui/skeleton';
 import { Button } from '../components/ui/button';
-import { BarChart3, ArrowDownRight, ArrowUpRight, History, PackageOpen, Download } from 'lucide-react';
+import { BarChart3, ArrowDownRight, ArrowUpRight, History, PackageOpen, Download, Archive, FileSpreadsheet, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
+const MONTH_NAMES = [
+    'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+    'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+];
+
+const formatMonthName = (year: number, month: number) => {
+    const name = MONTH_NAMES[month - 1] || String(month);
+    return `${name} ${year}`;
+};
+
+const exportMovementsToExcel = (movements: any[], fileName: string) => {
+    if (!movements || movements.length === 0) {
+        alert('İndirilecek hareket bulunmuyor.');
+        return;
+    }
+
+    // Excel tablosu için veriyi formatlıyoruz
+    const excelData = movements.map((mov: any) => ({
+        'Tarih': new Date(mov.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        'Ürün Kodu': mov.product?.productCode || '-',
+        'Ürün Adı': mov.product?.name || '-',
+        'İşlem Türü': mov.movementType === 'IN' ? 'Giriş' : 'Çıkış',
+        'Miktar': mov.changeAmount,
+        'İşlemi Yapan': mov.user?.username || 'Bilinmeyen'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    worksheet['!cols'] = [
+        { wch: 18 }, // Tarih
+        { wch: 15 }, // Ürün Kodu
+        { wch: 30 }, // Ürün Adı
+        { wch: 12 }, // İşlem Türü
+        { wch: 10 }, // Miktar
+        { wch: 15 }, // İşlemi Yapan
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Aylık Rapor');
+    XLSX.writeFile(workbook, fileName);
+};
+
 export const ReportsPage = () => {
+    const queryClient = useQueryClient();
+
     const { data: report, isLoading } = useQuery({
         queryKey: ['monthly-report'],
         queryFn: getMonthlyReport,
     });
 
-    // Excel İndirme Fonksiyonu
-    const handleExportExcel = () => {
-        if (!report?.movements || report.movements.length === 0) {
-            alert("İndirilecek hareket bulunmuyor.");
-            return;
+    const { data: archives, isLoading: isLoadingArchives } = useQuery({
+        queryKey: ['report-archives'],
+        queryFn: getReportArchives,
+    });
+
+    const archiveMutation = useMutation({
+        mutationFn: () => createReportArchive(),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['report-archives'] });
+        },
+        onError: (err: any) => {
+            alert(err?.response?.data?.error || 'Rapor arşivlenirken hata oluştu');
         }
+    });
 
-        // Excel tablosu için veriyi formatlıyoruz
-        const excelData = report.movements.map((mov: any) => ({
-            'Tarih': new Date(mov.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-            'Ürün Kodu': mov.product?.productCode || '-',
-            'Ürün Adı': mov.product?.name || '-',
-            'İşlem Türü': mov.movementType === 'IN' ? 'Giriş' : 'Çıkış',
-            'Miktar': mov.changeAmount,
-            'İşlemi Yapan': mov.user?.username || 'Bilinmeyen'
-        }));
+    const downloadArchiveMutation = useMutation({
+        mutationFn: (archive: ReportArchiveSummary) => getReportArchiveById(archive.id),
+        onSuccess: (archive) => {
+            const movements = archive?.data?.movements || [];
+            exportMovementsToExcel(movements, `Stok_Raporu_${formatMonthName(archive.year, archive.month)}.xlsx`);
+        },
+        onError: (err: any) => {
+            alert(err?.response?.data?.error || 'Rapor indirilemedi');
+        }
+    });
 
-        // Excel sayfası oluştur
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-        // Kolon genişliklerini ayarla (Görünüm güzel olsun diye)
-        worksheet['!cols'] = [
-            { wch: 18 }, // Tarih
-            { wch: 15 }, // Ürün Kodu
-            { wch: 30 }, // Ürün Adı
-            { wch: 12 }, // İşlem Türü
-            { wch: 10 }, // Miktar
-            { wch: 15 }, // İşlemi Yapan
-        ];
-
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Aylık Rapor");
-
-        // Dosyayı indir
+    // Excel İndirme Fonksiyonu (içinde bulunulan ay)
+    const handleExportExcel = () => {
         const dateStr = new Date().toLocaleDateString('tr-TR').replace(/\./g, '-');
-        XLSX.writeFile(workbook, `Stok_Raporu_${dateStr}.xlsx`);
+        exportMovementsToExcel(report?.movements || [], `Stok_Raporu_${dateStr}.xlsx`);
     };
 
     return (
@@ -110,6 +154,71 @@ export const ReportsPage = () => {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Geçmiş Aylık Raporlar */}
+            <Card className="rounded-2xl border-slate-200/80 shadow-sm bg-white overflow-hidden">
+                <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
+                                <Archive className="h-5 w-5 text-blue-600" /> Geçmiş Aylık Raporlar
+                            </CardTitle>
+                            <p className="text-xs text-slate-500 mt-1">Arşivlenen raporlar kalıcı olarak saklanır ve her ay yeniden indirilebilir.</p>
+                        </div>
+                        <Button
+                            onClick={() => archiveMutation.mutate()}
+                            disabled={archiveMutation.isPending}
+                            variant="outline"
+                            className="h-9 rounded-xl gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 shrink-0"
+                        >
+                            {archiveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
+                            {archiveMutation.isPending ? 'Arşivleniyor...' : 'Bu Ayı Arşivle'}
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                    {isLoadingArchives ? (
+                        <div className="p-6 space-y-3">
+                            {[1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
+                        </div>
+                    ) : !archives || archives.length === 0 ? (
+                        <div className="text-center py-12 px-6">
+                            <Archive className="mx-auto h-12 w-12 text-slate-300 mb-3" />
+                            <h3 className="text-base font-bold text-slate-800">Henüz Arşivlenmiş Rapor Yok</h3>
+                            <p className="text-sm text-slate-500 mt-1">
+                                Her ay sonunda rapor otomatik arşivlenir. Dilerseniz yukarıdaki “Bu Ayı Arşivle” butonuyla manuel olarak da kaydedebilirsiniz.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-slate-100">
+                            {archives.map((archive) => {
+                                const isDownloading = downloadArchiveMutation.isPending && downloadArchiveMutation.variables?.id === archive.id;
+                                return (
+                                    <div key={archive.id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 hover:bg-slate-50/60 transition-colors">
+                                        <div className="h-11 w-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                                            <FileSpreadsheet className="h-5 w-5 text-blue-600" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="text-sm font-bold text-slate-800">{formatMonthName(archive.year, archive.month)}</h3>
+                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                {archive.movementCount} hareket • Giriş {archive.totalIn} • Çıkış {archive.totalOut}
+                                            </p>
+                                        </div>
+                                        <Button
+                                            onClick={() => downloadArchiveMutation.mutate(archive)}
+                                            disabled={isDownloading}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-9 px-3 gap-2 shrink-0 shadow-sm shadow-emerald-600/20"
+                                        >
+                                            {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                                            {isDownloading ? 'İndiriliyor...' : 'Rapor İndir'}
+                                        </Button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
             {/* Detaylı Hareket Tablosu */}
             <Card className="rounded-2xl border-slate-200/80 shadow-sm bg-white overflow-hidden">

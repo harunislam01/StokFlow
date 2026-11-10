@@ -18,6 +18,7 @@ export const getCategories = async (): Promise<Category[]> => {
         name: cat.name,
         parentId: cat.parentId,
         icon: cat.icon,
+        imageUrl: cat.imageUrl,
         color: cat.color,
         formSchema: cat.formSchema,
         productCount: cat.productCount

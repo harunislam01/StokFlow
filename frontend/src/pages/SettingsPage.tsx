@@ -12,9 +12,10 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
-import { User as UserIcon, Shield, Users, FolderTree, Edit2, Trash2, Plus, LogOut, X, History, ChevronDown, ChevronUp, WifiOff, Bell, AlertTriangle } from 'lucide-react';
+import { User as UserIcon, Shield, Users, FolderTree, Edit2, Trash2, Plus, LogOut, X, History, ChevronDown, ChevronUp, WifiOff, Bell, AlertTriangle, ImagePlus } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { createPortal } from 'react-dom';
+import { resizeImageToDataUrl } from '../lib/image';
 
 const OfflineWarning = ({ sectionName }: { sectionName: string }) => (
   <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white backdrop-blur-sm">
@@ -131,6 +132,7 @@ export const SettingsPage = () => {
   const [catParentIdInput, setCatParentIdInput] = useState<string>('null');
   const [catIconInput, setCatIconInput] = useState('Package');
   const [catColorInput, setCatColorInput] = useState('indigo-600');
+  const [catImageInput, setCatImageInput] = useState<string | null>(null);
   const [properties, setProperties] = useState<any[]>([]);
 
   const addProperty = () => setProperties(prev => [...prev, { label: '', type: 'text', required: false, options: '' }]);
@@ -218,11 +220,22 @@ export const SettingsPage = () => {
   };
 
   const resetCategoryForm = () => {
-    setEditingCategory(null); setCatNameInput(''); setCatParentIdInput('null'); setCatIconInput('Package'); setCatColorInput('indigo-600'); setProperties([]);
+    setEditingCategory(null); setCatNameInput(''); setCatParentIdInput('null'); setCatIconInput('Package'); setCatColorInput('indigo-600'); setCatImageInput(null); setProperties([]);
   };
 
   const handleEditCategory = (c: any) => {
-    setEditingCategory(c); setCatNameInput(c.name); setCatParentIdInput(c.parentId ? String(c.parentId) : 'null'); setCatIconInput(c.icon || 'Package'); setCatColorInput(c.color || 'indigo-600'); setProperties(c.formSchema || []); setCategoryModalOpen(true);
+    setEditingCategory(c); setCatNameInput(c.name); setCatParentIdInput(c.parentId ? String(c.parentId) : 'null'); setCatIconInput(c.icon || 'Package'); setCatColorInput(c.color || 'indigo-600'); setCatImageInput(c.imageUrl || null); setProperties(c.formSchema || []); setCategoryModalOpen(true);
+  };
+
+  const handleCategoryImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setCatImageInput(await resizeImageToDataUrl(file));
+    } catch (err: any) {
+      alert(err.message || 'Resim seçilemedi');
+    }
+    e.target.value = '';
   };
 
   const handleSaveCategory = (e: React.FormEvent) => {
@@ -243,6 +256,7 @@ export const SettingsPage = () => {
       name: catNameInput,
       parentId: catParentIdInput === 'null' ? null : Number(catParentIdInput),
       icon: catIconInput,
+      imageUrl: catImageInput,
       color: catColorInput,
       formSchema: cleanedProperties
     };
@@ -628,6 +642,40 @@ export const SettingsPage = () => {
                   <div className="space-y-2">
                     <Label>Renk Sınıfı (Tailwind)</Label>
                     <Input value={catColorInput} onChange={e => setCatColorInput(e.target.value)} required />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Kategori Resmi (Opsiyonel)</Label>
+                  <div className="flex items-center gap-4">
+                    {catImageInput ? (
+                      <div className="relative h-24 w-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
+                        <img src={catImageInput} alt="Kategori resmi önizlemesi" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setCatImageInput(null)}
+                          className="absolute top-1 right-1 h-6 w-6 rounded-full bg-white/90 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-white shadow-sm"
+                          aria-label="Resmi kaldır"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="h-24 w-24 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 cursor-pointer transition-colors shrink-0">
+                        <ImagePlus className="h-6 w-6" />
+                        <span className="text-[11px] font-medium">Resim Seç</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleCategoryImageChange} />
+                      </label>
+                    )}
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500">Kategori için bir resim yükleyebilirsiniz.</p>
+                      {catImageInput && (
+                        <label className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer">
+                          Resmi Değiştir
+                          <input type="file" accept="image/*" className="hidden" onChange={handleCategoryImageChange} />
+                        </label>
+                      )}
+                    </div>
                   </div>
                 </div>
 

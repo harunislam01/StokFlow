@@ -24,6 +24,7 @@ export const getCategories = async (req: Request, res: Response) => {
       name: cat.name,
       parentId: cat.parentId,
       icon: cat.icon,
+      imageUrl: cat.imageUrl,
       color: cat.color,
       formSchema: cat.formSchema,
       createdAt: cat.createdAt,
@@ -70,7 +71,7 @@ export const getCategoryById = async (req: Request, res: Response) => {
 
 export const createCategory = async (req: Request, res: Response) => {
   try {
-    const { name, parentId, icon, color, formSchema } = req.body;
+    const { name, parentId, icon, imageUrl, color, formSchema } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Kategori adı zorunludur' });
@@ -81,6 +82,7 @@ export const createCategory = async (req: Request, res: Response) => {
         name,
         parentId: parentId ? parseInt(parentId) : null,
         icon: icon || null,
+        imageUrl: imageUrl || null,
         color: color || null,
         formSchema: formSchema || []
       }
@@ -108,7 +110,7 @@ export const createCategory = async (req: Request, res: Response) => {
 export const updateCategory = async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
-    const { name, parentId, icon, color, formSchema } = req.body;
+    const { name, parentId, icon, imageUrl, color, formSchema } = req.body;
 
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Geçersiz kategori ID' });
@@ -128,6 +130,7 @@ export const updateCategory = async (req: Request, res: Response) => {
         name: name !== undefined ? name : existingCategory.name,
         parentId: parentId !== undefined ? (parentId ? parseInt(parentId) : null) : existingCategory.parentId,
         icon: icon !== undefined ? icon : existingCategory.icon,
+        imageUrl: imageUrl !== undefined ? (imageUrl || null) : existingCategory.imageUrl,
         color: color !== undefined ? color : existingCategory.color,
         formSchema: formSchema !== undefined ? formSchema : existingCategory.formSchema
       }

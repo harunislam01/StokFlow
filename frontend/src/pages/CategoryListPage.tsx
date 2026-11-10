@@ -9,14 +9,16 @@ import { Card, CardContent, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { FolderTree, Plus, X } from 'lucide-react';
+import { FolderTree, Plus, X, ImagePlus } from 'lucide-react';
 import * as Icons from 'lucide-react';
+import { resizeImageToDataUrl } from '../lib/image';
 
 export const CategoryListPage = () => {
     const queryClient = useQueryClient();
     const [createCatModalOpen, setCreateCatModalOpen] = useState(false);
     const [catNameInput, setCatNameInput] = useState('');
     const [catParentIdInput, setCatParentIdInput] = useState<string>('null');
+    const [catImageInput, setCatImageInput] = useState<string | null>(null);
 
     const { data: categories, isLoading } = useQuery({
         queryKey: ['categories'],
@@ -33,6 +35,7 @@ export const CategoryListPage = () => {
             setCreateCatModalOpen(false);
             setCatNameInput('');
             setCatParentIdInput('null');
+            setCatImageInput(null);
         },
         onError: (err: any) => {
             alert(err?.response?.data?.error || 'Kategori eklenirken hata oluştu');
@@ -46,9 +49,21 @@ export const CategoryListPage = () => {
             name: catNameInput.trim(),
             parentId: catParentIdInput === 'null' ? null : parseInt(catParentIdInput),
             icon: 'Package', // Varsayılan ikon
+            imageUrl: catImageInput,
             color: 'slate-500',
             formSchema: []
         });
+    };
+
+    const handleCategoryImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            setCatImageInput(await resizeImageToDataUrl(file));
+        } catch (err: any) {
+            alert(err.message || 'Resim seçilemedi');
+        }
+        e.target.value = '';
     };
 
     const parentCategories = categories?.filter(c => !c.parentId) || [];
@@ -93,8 +108,12 @@ export const CategoryListPage = () => {
                         return (
                             <Link key={cat.id} to={`/category/${cat.id}`} className="flex h-full">
                                 <div className="w-full bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-150 flex flex-col items-center justify-center text-center group cursor-pointer btn-tactile">
-                                    <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-3 group-hover:scale-105 group-hover:bg-blue-100 transition-all duration-150">
-                                        {IconComponent && <IconComponent className="h-7 w-7 text-blue-600" />}
+                                    <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-3 overflow-hidden group-hover:scale-105 group-hover:bg-blue-100 transition-all duration-150">
+                                        {cat.imageUrl ? (
+                                            <img src={cat.imageUrl} alt={cat.name} className="h-full w-full object-cover" loading="lazy" />
+                                        ) : (
+                                            IconComponent && <IconComponent className="h-7 w-7 text-blue-600" />
+                                        )}
                                     </div>
                                     <h3 className="font-bold text-sm text-slate-800 line-clamp-2 group-hover:text-blue-700 transition-colors">
                                         {cat.name}
@@ -154,6 +173,39 @@ export const CategoryListPage = () => {
                                         </SelectContent>
                                     </Select>
                                     <p className="text-[11px] text-slate-500">Eğer bir ana kategori oluşturuyorsanız boş bırakın.</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-slate-700">Kategori Resmi (Opsiyonel)</Label>
+                                    <div className="flex items-center gap-4">
+                                        {catImageInput ? (
+                                            <div className="relative h-24 w-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
+                                                <img src={catImageInput} alt="Kategori resmi önizlemesi" className="h-full w-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCatImageInput(null)}
+                                                    className="absolute top-1 right-1 h-6 w-6 rounded-full bg-white/90 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-white shadow-sm"
+                                                    aria-label="Resmi kaldır"
+                                                >
+                                                    <X className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <label className="h-24 w-24 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 cursor-pointer transition-colors shrink-0">
+                                                <ImagePlus className="h-6 w-6" />
+                                                <span className="text-[11px] font-medium">Resim Seç</span>
+                                                <input type="file" accept="image/*" className="hidden" onChange={handleCategoryImageChange} />
+                                            </label>
+                                        )}
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-slate-500">Kategori için bir resim yükleyebilirsiniz.</p>
+                                            {catImageInput && (
+                                                <label className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer">
+                                                    Resmi Değiştir
+                                                    <input type="file" accept="image/*" className="hidden" onChange={handleCategoryImageChange} />
+                                                </label>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="flex justify-end gap-3 pt-5 border-t border-slate-100 mt-2">
                                     <Button variant="outline" type="button" className="h-11 text-sm rounded-xl font-semibold border-slate-200 text-slate-600 hover:bg-slate-50" onClick={() => setCreateCatModalOpen(false)}>İptal</Button>
