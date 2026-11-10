@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Truck, Plus, Search, Phone, Mail, MapPin, X, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { toast } from 'sonner';
 
 export const SuppliersPage = () => {
     const queryClient = useQueryClient();
@@ -37,9 +38,10 @@ export const SuppliersPage = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+            toast.success(editingSupplier ? 'Tedarikçi güncellendi' : 'Tedarikçi eklendi');
             closeModal();
         },
-        onError: (err: any) => alert(err?.response?.data?.error || 'İşlem sırasında hata oluştu.')
+        onError: (err: any) => toast.error(err?.response?.data?.error || 'İşlem sırasında hata oluştu.')
     });
 
     // Silme Mutation'ı
@@ -48,8 +50,9 @@ export const SuppliersPage = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['suppliers'] });
             setDeleteId(null);
+            toast.success('Tedarikçi silindi');
         },
-        onError: (err: any) => alert(err?.response?.data?.error || 'Tedarikçi silinemedi.')
+        onError: (err: any) => toast.error(err?.response?.data?.error || 'Tedarikçi silinemedi.')
     });
 
     const openModal = (supplier?: Supplier) => {

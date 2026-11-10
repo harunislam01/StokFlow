@@ -12,6 +12,7 @@ import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
 import { ArrowLeft, Edit, Trash2, Plus, Minus, History, AlertTriangle, Briefcase, X, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -97,8 +98,10 @@ export const ProductDetailPage = () => {
     mutationFn: () => deleteProduct(productId),
     onSuccess: () => {
       queryClient.invalidateQueries();
+      toast.success('Ürün başarıyla silindi');
       navigate(product?.categoryId ? `/category/${product.categoryId}` : '/');
     },
+    onError: (error: any) => toast.error(error.response?.data?.error || 'Ürün silinirken hata oluştu'),
   });
 
   const stockMutation = useMutation({
@@ -108,10 +111,11 @@ export const ProductDetailPage = () => {
       setIsStockDialogOpen(false);
       setStockChange(0);
       setStockReason('');
+      toast.success(changeType === 'add' ? 'Stok girişi yapıldı' : 'Stok çıkışı yapıldı');
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
     },
     onError: (error: any) => {
-      alert(error.response?.data?.error || 'Stok güncellenirken hata oluştu');
+      toast.error(error.response?.data?.error || 'Stok güncellenirken hata oluştu');
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
     }
   });
@@ -124,8 +128,9 @@ export const ProductDetailPage = () => {
       setIsProjectDialogOpen(false);
       setSelectedProjectId(null);
       setAssignQty(1);
+      toast.success('Ürün projeye atandı');
     },
-    onError: (err: any) => alert(err.response?.data?.error || 'Projeye eklenirken hata oluştu')
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Projeye eklenirken hata oluştu')
   });
 
   const removeFromProjectMutation = useMutation({
@@ -133,8 +138,9 @@ export const ProductDetailPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Ürün projeden çıkarıldı ve stoğa iade edildi');
     },
-    onError: (err: any) => alert(err.response?.data?.error || 'Ürün projeden çıkarılırken hata oluştu')
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Ürün projeden çıkarılırken hata oluştu')
   });
 
   const handleStockUpdate = () => {

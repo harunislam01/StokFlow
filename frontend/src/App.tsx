@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppLayout } from './components/layout/AppLayout';
 
 import { Suspense, lazy } from 'react';
+import { Toaster } from 'sonner';
 
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -46,7 +47,6 @@ const queryClient = new QueryClient({
 function App() {
   useEffect(() => {
     const handleSyncCompleted = () => {
-      console.log('[App]: Senkronizasyon tamamlandı, önbellek yenileniyor...');
       queryClient.invalidateQueries();
     };
     window.addEventListener('sync-completed', handleSyncCompleted);
@@ -60,6 +60,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Router>
+            <Toaster position="top-right" richColors closeButton />
             <PwaInstallPrompt />
             <PwaUpdatePrompt />
             <ConflictResolutionModal />

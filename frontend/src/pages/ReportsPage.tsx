@@ -1,11 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
     getMonthlyReport,
     getReportArchives,
-    createReportArchive,
     getReportArchiveById,
     type ReportArchiveSummary
 } from '../api/reports';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
@@ -26,7 +26,7 @@ const formatMonthName = (year: number, month: number) => {
 
 const exportMovementsToExcel = (movements: any[], fileName: string) => {
     if (!movements || movements.length === 0) {
-        alert('İndirilecek hareket bulunmuyor.');
+        toast.info('İndirilecek hareket bulunmuyor.');
         return;
     }
 
@@ -57,8 +57,6 @@ const exportMovementsToExcel = (movements: any[], fileName: string) => {
 };
 
 export const ReportsPage = () => {
-    const queryClient = useQueryClient();
-
     const { data: report, isLoading } = useQuery({
         queryKey: ['monthly-report'],
         queryFn: getMonthlyReport,
@@ -69,31 +67,28 @@ export const ReportsPage = () => {
         queryFn: getReportArchives,
     });
 
-    const archiveMutation = useMutation({
-        mutationFn: () => createReportArchive(),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['report-archives'] });
-        },
-        onError: (err: any) => {
-            alert(err?.response?.data?.error || 'Rapor arşivlenirken hata oluştu');
-        }
-    });
-
     const downloadArchiveMutation = useMutation({
         mutationFn: (archive: ReportArchiveSummary) => getReportArchiveById(archive.id),
         onSuccess: (archive) => {
             const movements = archive?.data?.movements || [];
             exportMovementsToExcel(movements, `Stok_Raporu_${formatMonthName(archive.year, archive.month)}.xlsx`);
+            toast.success(`${formatMonthName(archive.year, archive.month)} raporu indirildi`);
         },
         onError: (err: any) => {
-            alert(err?.response?.data?.error || 'Rapor indirilemedi');
+            toast.error(err?.response?.data?.error || 'Rapor indirilemedi');
         }
     });
 
     // Excel İndirme Fonksiyonu (içinde bulunulan ay)
     const handleExportExcel = () => {
+        const movements = report?.movements || [];
+        if (movements.length === 0) {
+            toast.info('İndirilecek hareket bulunmuyor.');
+            return;
+        }
         const dateStr = new Date().toLocaleDateString('tr-TR').replace(/\./g, '-');
-        exportMovementsToExcel(report?.movements || [], `Stok_Raporu_${dateStr}.xlsx`);
+        exportMovementsToExcel(movements, `Stok_Raporu_${dateStr}.xlsx`);
+        toast.success('Aylık rapor Excel dosyası indirildi');
     };
 
     return (
@@ -158,22 +153,11 @@ export const ReportsPage = () => {
             {/* Geçmiş Aylık Raporlar */}
             <Card className="rounded-2xl border-slate-200/80 shadow-sm bg-white overflow-hidden">
                 <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                            <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
-                                <Archive className="h-5 w-5 text-blue-600" /> Geçmiş Aylık Raporlar
-                            </CardTitle>
-                            <p className="text-xs text-slate-500 mt-1">Arşivlenen raporlar kalıcı olarak saklanır ve her ay yeniden indirilebilir.</p>
-                        </div>
-                        <Button
-                            onClick={() => archiveMutation.mutate()}
-                            disabled={archiveMutation.isPending}
-                            variant="outline"
-                            className="h-9 rounded-xl gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 shrink-0"
-                        >
-                            {archiveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
-                            {archiveMutation.isPending ? 'Arşivleniyor...' : 'Bu Ayı Arşivle'}
-                        </Button>
+                    <div>
+                        <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
+                            <Archive className="h-5 w-5 text-blue-600" /> Geçmiş Aylık Raporlar
+                        </CardTitle>
+                        <p className="text-xs text-slate-500 mt-1">Arşivlenen raporlar kalıcı olarak saklanır ve her ay yeniden indirilebilir.</p>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -186,7 +170,7 @@ export const ReportsPage = () => {
                             <Archive className="mx-auto h-12 w-12 text-slate-300 mb-3" />
                             <h3 className="text-base font-bold text-slate-800">Henüz Arşivlenmiş Rapor Yok</h3>
                             <p className="text-sm text-slate-500 mt-1">
-                                Her ay sonunda rapor otomatik arşivlenir. Dilerseniz yukarıdaki “Bu Ayı Arşivle” butonuyla manuel olarak da kaydedebilirsiniz.
+                                Her ay sonunda o ayın stok verileri otomatik olarak rapor halinde arşivlenir. Arşiv oluştuğunda burada listelenir.
                             </p>
                         </div>
                     ) : (
@@ -210,7 +194,7 @@ export const ReportsPage = () => {
                                             className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-9 px-3 gap-2 shrink-0 shadow-sm shadow-emerald-600/20"
                                         >
                                             {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                                            {isDownloading ? 'İndiriliyor...' : 'Rapor İndir'}
+                                            {isDownloading ? 'İndiriliyor...' : 'İndir'}
                                         </Button>
                                     </div>
                                 );

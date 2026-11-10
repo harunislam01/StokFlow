@@ -7,6 +7,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Package, Boxes, Warehouse, Cpu, Database, Barcode, Layers } from 'lucide-react';
 import { login } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -119,7 +120,7 @@ export const LoginPage = () => {
               </div>
               <button
                 type="button"
-                onClick={() => alert('Lütfen yöneticinizle iletişime geçin.')}
+                onClick={() => toast.info('Lütfen yöneticinizle iletişime geçin.')}
                 className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
               >
                 Şifremi Unuttum

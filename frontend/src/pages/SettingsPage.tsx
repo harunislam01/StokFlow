@@ -16,6 +16,7 @@ import { User as UserIcon, Shield, Users, FolderTree, Edit2, Trash2, Plus, LogOu
 import { apiClient } from '../api/client';
 import { createPortal } from 'react-dom';
 import { resizeImageToDataUrl } from '../lib/image';
+import { toast } from 'sonner';
 
 const OfflineWarning = ({ sectionName }: { sectionName: string }) => (
   <Card className="rounded-2xl shadow-sm border-slate-200/50 bg-white backdrop-blur-sm">
@@ -68,6 +69,7 @@ export const SettingsPage = () => {
 
   // Silme Modal State
   const [deleteCatId, setDeleteCatId] = useState<number | null>(null);
+  const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
 
   React.useEffect(() => {
     if (tabParam) setActiveTab(tabParam as any);
@@ -95,7 +97,7 @@ export const SettingsPage = () => {
 
   const handleSubscribePush = async () => {
     if (typeof window === 'undefined' || typeof Notification === 'undefined' || !('serviceWorker' in navigator)) {
-      alert('Bu tarayıcı bildirimleri desteklemiyor.');
+      toast.error('Bu tarayıcı bildirimleri desteklemiyor.');
       return;
     }
     try {
@@ -110,11 +112,11 @@ export const SettingsPage = () => {
           applicationServerKey: convertedVapidKey
         });
         await apiClient.post('/notifications/subscribe', subscription);
-        alert('Web Push bildirim aboneliği başarıyla etkinleştirildi! 🎉');
+        toast.success('Web Push bildirim aboneliği başarıyla etkinleştirildi! 🎉');
       }
     } catch (err: any) {
       console.error('Failed to subscribe push notifications:', err);
-      alert('Bildirim aboneliği başlatılamadı: ' + (err.message || err));
+      toast.error('Bildirim aboneliği başlatılamadı: ' + (err.message || err));
     }
   };
 
@@ -163,29 +165,29 @@ export const SettingsPage = () => {
   // User Mutations
   const createUserMutation = useMutation({
     mutationFn: createUser,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); setUserModalOpen(false); resetUserForm(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); setUserModalOpen(false); resetUserForm(); toast.success('Kullanıcı oluşturuldu'); },
   });
 
   const updateUserMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateUser(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); setUserModalOpen(false); resetUserForm(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); setUserModalOpen(false); resetUserForm(); toast.success('Kullanıcı güncellendi'); },
   });
 
   const deleteUserMutation = useMutation({
     mutationFn: deleteUser,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
-    onError: (err: any) => alert(err?.response?.data?.error || 'Kullanıcı silinirken hata oluştu'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); setDeleteUserId(null); toast.success('Kullanıcı silindi'); },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Kullanıcı silinirken hata oluştu'),
   });
 
   // Category Mutations
   const createCategoryMutation = useMutation({
     mutationFn: createCategory,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); setCategoryModalOpen(false); resetCategoryForm(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); setCategoryModalOpen(false); resetCategoryForm(); toast.success('Kategori eklendi'); },
   });
 
   const updateCategoryMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateCategory(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); setCategoryModalOpen(false); resetCategoryForm(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); setCategoryModalOpen(false); resetCategoryForm(); toast.success('Kategori güncellendi'); },
   });
 
   // DÜZELTİLEN SİLME MUTATION'I (Modal Bağlandı)
@@ -194,9 +196,10 @@ export const SettingsPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries();
       setDeleteCatId(null); // Başarılıysa modalı kapat
+      toast.success('Kategori silindi');
     },
     onError: (err: any) => {
-      alert(err.response?.data?.error || 'Kategori silinemedi. Alt kategorisi veya ürünü olabilir.');
+      toast.error(err.response?.data?.error || 'Kategori silinemedi. Alt kategorisi veya ürünü olabilir.');
     }
   });
 
@@ -233,7 +236,7 @@ export const SettingsPage = () => {
     try {
       setCatImageInput(await resizeImageToDataUrl(file));
     } catch (err: any) {
-      alert(err.message || 'Resim seçilemedi');
+      toast.error(err.message || 'Resim seçilemedi');
     }
     e.target.value = '';
   };
@@ -241,7 +244,7 @@ export const SettingsPage = () => {
   const handleSaveCategory = (e: React.FormEvent) => {
     e.preventDefault();
     for (const prop of properties) {
-      if (!prop.label.trim()) { alert('Lütfen tüm özelliklerin adını doldurun.'); return; }
+      if (!prop.label.trim()) { toast.error('Lütfen tüm özelliklerin adını doldurun.'); return; }
     }
     const cleanedProperties = properties.map(prop => {
       const name = prop.name || prop.label.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
@@ -421,7 +424,7 @@ export const SettingsPage = () => {
                               <Edit2 className="h-4 w-4 text-slate-500 hover:text-blue-600" />
                             </Button>
                             {u.username !== 'admin' && (
-                              <Button variant="ghost" size="icon" onClick={() => { if (confirm('Kullanıcıyı silmek istediğinize emin misiniz?')) deleteUserMutation.mutate(u.id); }}>
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteUserId(u.id)}>
                                 <Trash2 className="h-4 w-4 text-slate-500 hover:text-red-600" />
                               </Button>
                             )}
@@ -733,6 +736,32 @@ export const SettingsPage = () => {
                 </div>
               </form>
             </CardContent>
+          </Card>
+        </div>,
+        document.body
+      )}
+
+      {/* Kullanıcı Silme Onay Modalı */}
+      {deleteUserId !== null && createPortal(
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-sm rounded-3xl shadow-2xl border-none bg-white overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="mx-auto h-16 w-16 bg-red-50 rounded-full flex items-center justify-center mb-2">
+                <AlertTriangle className="h-8 w-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Kullanıcıyı Sil?</h3>
+              <p className="text-sm text-slate-500">
+                {users?.find(u => u.id === deleteUserId)?.username || 'Bu kullanıcı'} adlı kullanıcıyı silmek istediğinize emin misiniz?
+              </p>
+            </div>
+            <div className="bg-slate-50 p-4 border-t border-slate-100 flex gap-3">
+              <Button variant="outline" className="flex-1 h-11 rounded-xl font-semibold border-slate-200 text-slate-600" onClick={() => setDeleteUserId(null)}>
+                İptal
+              </Button>
+              <Button className="flex-1 bg-red-600 hover:bg-red-700 text-white h-11 rounded-xl font-semibold shadow-sm" onClick={() => deleteUserMutation.mutate(deleteUserId)} disabled={deleteUserMutation.isPending}>
+                {deleteUserMutation.isPending ? 'Siliniyor...' : 'Evet, Sil'}
+              </Button>
+            </div>
           </Card>
         </div>,
         document.body

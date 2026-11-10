@@ -4,6 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { getProductById, createProduct, updateProduct, getCategories } from '../api/products';
 import { getSuppliers } from '../api/suppliers';
 import { Button } from '../components/ui/button';
@@ -76,7 +77,7 @@ export const ProductFormPage = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Lütfen bir resim dosyası seçin');
+      toast.error('Lütfen bir resim dosyası seçin');
       return;
     }
 
@@ -143,16 +144,13 @@ export const ProductFormPage = () => {
     onSuccess: (savedProduct) => {
       queryClient.invalidateQueries();
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
-      // Düzenleme sonrası ürünün bağlı olduğu kategori sayfasına dön
-      if (isEditing) {
-        navigate(`/category/${savedProduct.categoryId}`);
-      } else {
-        navigate(`/product/${savedProduct.id}`);
-      }
+      toast.success(isEditing ? 'Ürün başarıyla güncellendi' : 'Ürün başarıyla eklendi');
+      // Hem düzenleme hem ekleme sonrası ürünün bağlı olduğu kategori sayfasına dön
+      navigate(`/category/${savedProduct.categoryId}`);
     },
     onError: (error: any) => {
       const msg = error.response?.data?.error || error.message || 'Ürün kaydedilirken bir hata oluştu';
-      alert(msg);
+      toast.error(msg);
     }
   });
 

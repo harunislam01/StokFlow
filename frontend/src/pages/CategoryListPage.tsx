@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { FolderTree, Plus, X, ImagePlus } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { resizeImageToDataUrl } from '../lib/image';
+import { toast } from 'sonner';
 
 export const CategoryListPage = () => {
     const queryClient = useQueryClient();
@@ -36,9 +37,10 @@ export const CategoryListPage = () => {
             setCatNameInput('');
             setCatParentIdInput('null');
             setCatImageInput(null);
+            toast.success('Kategori başarıyla eklendi');
         },
         onError: (err: any) => {
-            alert(err?.response?.data?.error || 'Kategori eklenirken hata oluştu');
+            toast.error(err?.response?.data?.error || 'Kategori eklenirken hata oluştu');
         }
     });
 
@@ -61,7 +63,7 @@ export const CategoryListPage = () => {
         try {
             setCatImageInput(await resizeImageToDataUrl(file));
         } catch (err: any) {
-            alert(err.message || 'Resim seçilemedi');
+            toast.error(err.message || 'Resim seçilemedi');
         }
         e.target.value = '';
     };

@@ -92,9 +92,49 @@ export const createProject = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Sadece .xls, .xlsx veya .csv dosyaları yüklenebilir' });
     }
 
-    const productsData = Array.isArray(productIds) ? productIds : [];
+    // Normalize, validate and merge duplicate product assignments so the
+    // unique (projectId, productId) constraint can never be hit accidentally.
+    const rawProducts = Array.isArray(productIds) ? productIds : [];
+    const normalizedProducts = new Map<number, { productId: number; quantity: number; note?: string }>();
+
+    for (const item of rawProducts) {
+      const pId = Number(item?.productId);
+      const qty = Number(item?.quantity ?? 1);
+
+      if (!Number.isInteger(pId) || pId <= 0) {
+        return res.status(400).json({ error: 'Geçersiz ürün ID' });
+      }
+      if (!Number.isInteger(qty) || qty <= 0) {
+        return res.status(400).json({ error: 'Proje ürün miktarı 0\'dan büyük olmalıdır' });
+      }
+
+      const existingItem = normalizedProducts.get(pId);
+      if (existingItem) {
+        existingItem.quantity += qty;
+      } else {
+        normalizedProducts.set(pId, { productId: pId, quantity: qty, note: item?.note });
+      }
+    }
+
+    const productsData = Array.from(normalizedProducts.values());
 
     const project = await prisma.$transaction(async (tx) => {
+      // Validate stock before creating assignments so a project can never push
+      // a product below zero.
+      for (const p of productsData) {
+        const product = await tx.product.findFirst({
+          where: { id: p.productId, deletedAt: null },
+          select: { name: true, stockQuantity: true }
+        });
+
+        if (!product) {
+          throw new Error(`PRODUCT_NOT_FOUND|${p.productId}`);
+        }
+        if (product.stockQuantity < p.quantity) {
+          throw new Error(`INSUFFICIENT_STOCK|${product.name}|${product.stockQuantity}`);
+        }
+      }
+
       const newProj = await tx.project.create({
         data: {
           name: name.trim(),
@@ -155,7 +195,7 @@ export const createProject = async (req: Request, res: Response) => {
           entityType: 'PROJECT',
           entityId: newProj.id,
           action: 'CREATE',
-          newData: newProj as any
+          newData: sanitizeProject(newProj) as any
         }
       });
 
@@ -163,8 +203,19 @@ export const createProject = async (req: Request, res: Response) => {
     });
 
     res.status(201).json(sanitizeProject(project));
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create project error:', error);
+
+    if (typeof error?.message === 'string' && error.message.startsWith('INSUFFICIENT_STOCK|')) {
+      const [, productName, available] = error.message.split('|');
+      return res.status(400).json({
+        error: `Yetersiz stok: ${productName}. Mevcut stok: ${available} adet.`
+      });
+    }
+    if (typeof error?.message === 'string' && error.message.startsWith('PRODUCT_NOT_FOUND|')) {
+      return res.status(400).json({ error: 'Projeye eklenmek istenen ürün bulunamadı' });
+    }
+
     res.status(500).json({ error: 'Proje oluşturulurken hata oluştu' });
   }
 };
@@ -216,8 +267,8 @@ export const updateProject = async (req: Request, res: Response) => {
         entityType: 'PROJECT',
         entityId: id,
         action: 'UPDATE',
-        oldData: existing as any,
-        newData: updated as any
+        oldData: sanitizeProject(existing) as any,
+        newData: sanitizeProject(updated) as any
       }
     });
 
@@ -280,7 +331,7 @@ export const deleteProject = async (req: Request, res: Response) => {
         entityType: 'PROJECT',
         entityId: id,
         action: 'DELETE',
-        oldData: existing as any
+        oldData: sanitizeProject(existing) as any
       }
     });
 
@@ -447,7 +498,22 @@ export const updateProjectProduct = async (req: Request, res: Response) => {
       if (!pp) throw new Error('Proje-ürün ilişkisi bulunamadı');
 
       const newQty = quantity !== undefined ? parseInt(quantity) : pp.quantity;
+      if (isNaN(newQty) || newQty <= 0) {
+        throw new Error('Miktar 0\'dan büyük olmalıdır');
+      }
+
       const diff = newQty - pp.quantity; // positive means increased project usage, negative means reduced project usage
+
+      if (diff > 0) {
+        const product = await tx.product.findFirst({
+          where: { id: productId, deletedAt: null },
+          select: { name: true, stockQuantity: true }
+        });
+        if (!product) throw new Error('Ürün bulunamadı');
+        if (product.stockQuantity < diff) {
+          throw new Error(`INSUFFICIENT_STOCK|${product.name}|${product.stockQuantity}`);
+        }
+      }
 
       const updated = await tx.projectProduct.update({
         where: { id: pp.id },
@@ -485,6 +551,12 @@ export const updateProjectProduct = async (req: Request, res: Response) => {
     res.json(updatedPP);
   } catch (error: any) {
     console.error('Update project product error:', error);
+    if (typeof error?.message === 'string' && error.message.startsWith('INSUFFICIENT_STOCK|')) {
+      const [, productName, available] = error.message.split('|');
+      return res.status(400).json({
+        error: `Yetersiz stok: ${productName}. Mevcut stok: ${available} adet.`
+      });
+    }
     res.status(500).json({ error: error.message || 'Proje ürünü güncellenirken hata oluştu' });
   }
 };

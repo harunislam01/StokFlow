@@ -6,6 +6,7 @@ import { syncOfflineData } from '../../lib/syncService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './dialog';
 import { Button } from './button';
 import { useTheme } from '../../context/ThemeProvider';
+import { toast } from 'sonner';
 
 export const ConflictResolutionModal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +61,7 @@ export const ConflictResolutionModal = () => {
     setResolving(true);
     try {
       if (!serverProduct) {
-        alert('Sunucu sürüm detayları alınamadığı için zorla gönderme yapılamıyor.');
+        toast.error('Sunucu sürüm detayları alınamadığı için zorla gönderme yapılamıyor.');
         return;
       }
 

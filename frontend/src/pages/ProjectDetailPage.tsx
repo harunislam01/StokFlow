@@ -15,6 +15,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
+import { toast } from 'sonner';
 
 const STATUS_CONFIG = {
   PLANNING:  { label: 'Planlama',   color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
@@ -74,16 +75,19 @@ export const ProjectDetailPage = () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setIsEditOpen(false);
+      toast.success('Proje başarıyla güncellendi');
     },
-    onError: (err: any) => alert(err.response?.data?.error || 'Güncelleme hatası')
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Güncelleme hatası')
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteProject(projectId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Proje başarıyla silindi');
       navigate('/projects');
-    }
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Proje silinirken hata oluştu')
   });
 
   const addProductMutation = useMutation({
@@ -95,15 +99,18 @@ export const ProjectDetailPage = () => {
       setAddQty(1);
       setAddNote('');
       setProductSearch('');
+      toast.success('Ürün projeye eklendi');
     },
-    onError: (err: any) => alert(err.response?.data?.error || 'Ürün eklenirken hata')
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Ürün eklenirken hata')
   });
 
   const removeProductMutation = useMutation({
     mutationFn: (pid: number) => removeProductFromProject(projectId, pid),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-    }
+      toast.success('Ürün projeden çıkarıldı');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Ürün projeden çıkarılırken hata oluştu')
   });
 
   const openEdit = () => {

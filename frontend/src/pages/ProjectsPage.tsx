@@ -17,6 +17,7 @@ import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
 import type { Product } from '../types';
+import { toast } from 'sonner';
 
 /* ── Excel Dosyası ───────────────────────────────── */
 interface ExcelAttachment {
@@ -26,7 +27,8 @@ interface ExcelAttachment {
 }
 
 const ACCEPTED_EXCEL_PATTERN = /\.(xls|xlsx|csv)$/i;
-const MAX_EXCEL_SIZE = 4 * 1024 * 1024; // express.json limit is 5mb (base64 grows ~33%)
+// Base64 grows by ~33%, and express.json has a 5mb limit, so keep a safe margin.
+const MAX_EXCEL_SIZE = 3 * 1024 * 1024;
 
 const readExcelFile = (file: File): Promise<ExcelAttachment> => {
   return new Promise((resolve, reject) => {
@@ -417,9 +419,10 @@ export const ProjectsPage = () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setIsCreateOpen(false);
       resetForm();
+      toast.success('Proje başarıyla oluşturuldu');
     },
     onError: (err: any) => {
-      alert(err.response?.data?.error || 'Proje oluşturulurken hata oluştu');
+      toast.error(err.response?.data?.error || 'Proje oluşturulurken hata oluştu');
     }
   });
 
@@ -428,9 +431,10 @@ export const ProjectsPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setEditProject(null);
+      toast.success('Proje başarıyla güncellendi');
     },
     onError: (err: any) => {
-      alert(err.response?.data?.error || 'Proje güncellenirken hata oluştu');
+      toast.error(err.response?.data?.error || 'Proje güncellenirken hata oluştu');
     }
   });
 
@@ -439,7 +443,9 @@ export const ProjectsPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setDeleteConfirm(null);
-    }
+      toast.success('Proje başarıyla silindi');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Proje silinirken hata oluştu')
   });
 
   const openEdit = (project: Project) => {
@@ -470,7 +476,7 @@ export const ProjectsPage = () => {
       if (target === 'create') setFormExcel(attachment);
       else setEditExcel(attachment);
     } catch (err: any) {
-      alert(err.message || 'Excel dosyası seçilemedi');
+      toast.error(err.message || 'Excel dosyası seçilemedi');
     }
     e.target.value = '';
   };
@@ -497,7 +503,7 @@ export const ProjectsPage = () => {
 
   const handleSubmit = () => {
     if (!formName.trim()) {
-      alert('Proje adı zorunludur');
+      toast.error('Proje adı zorunludur');
       return;
     }
     createMutation.mutate({
@@ -620,9 +626,11 @@ export const ProjectsPage = () => {
                   onEdit={() => openEdit(project)}
                   onDownloadExcel={() => {
                     if (!project.hasExcel) return;
-                    downloadProjectExcel(project.id, project.excelFileName).catch((err: any) =>
-                      alert(err.response?.data?.error || 'Excel dosyası indirilemedi')
-                    );
+                    downloadProjectExcel(project.id, project.excelFileName)
+                      .then(() => toast.success('Excel dosyası indirildi'))
+                      .catch((err: any) =>
+                        toast.error(err.response?.data?.error || 'Excel dosyası indirilemedi')
+                      );
                   }}
                   onDelete={() => setDeleteConfirm(project.id)}
                 />
@@ -768,7 +776,7 @@ export const ProjectsPage = () => {
                 </label>
               )}
               <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                Sadece .xls, .xlsx ve .csv dosyaları (en fazla 4 MB).
+                Sadece .xls, .xlsx ve .csv dosyaları (en fazla 3 MB).
               </p>
             </div>
           </div>
@@ -907,7 +915,7 @@ export const ProjectsPage = () => {
                 </label>
               )}
               <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                Sadece .xls, .xlsx ve .csv dosyaları (en fazla 4 MB).
+                Sadece .xls, .xlsx ve .csv dosyaları (en fazla 3 MB).
               </p>
             </div>
           </div>

@@ -140,6 +140,12 @@ export const createReportArchive = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Geçersiz ay' });
         }
 
+        // Do not create an empty archive when the month has no stock movements.
+        const report = await buildMonthlyReport(year, month);
+        if (report.movements.length === 0) {
+            return res.status(400).json({ error: 'Bu ay için arşivlenecek stok hareketi bulunmuyor' });
+        }
+
         const saved = await archiveMonth(year, month);
 
         res.status(201).json({

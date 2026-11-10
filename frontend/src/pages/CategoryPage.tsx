@@ -8,9 +8,11 @@ import { Card, CardContent, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Search, Plus, Filter, Package, X, FolderTree } from 'lucide-react';
+import { Search, Plus, Filter, Package, X, FolderTree, ImagePlus } from 'lucide-react';
 import { Skeleton } from '../components/ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { toast } from 'sonner';
+import { resizeImageToDataUrl } from '../lib/image';
 
 export const CategoryPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +23,7 @@ export const CategoryPage = () => {
   // Alt Kategori Ekleme State
   const [isSubCatModalOpen, setIsSubCatModalOpen] = useState(false);
   const [subCatName, setSubCatName] = useState('');
+  const [subCatImage, setSubCatImage] = useState<string | null>(null);
 
   const { data: categories, isLoading: isLoadingCats } = useQuery({
     queryKey: ['categories'],
@@ -38,8 +41,10 @@ export const CategoryPage = () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       setIsSubCatModalOpen(false);
       setSubCatName('');
+      setSubCatImage(null);
+      toast.success('Alt kategori başarıyla eklendi');
     },
-    onError: (err: any) => alert(err?.response?.data?.error || 'Alt kategori eklenirken hata oluştu')
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Alt kategori eklenirken hata oluştu')
   });
 
   const handleSaveSubCat = (e: React.FormEvent) => {
@@ -49,9 +54,21 @@ export const CategoryPage = () => {
       name: subCatName.trim(),
       parentId: categoryId, // Otomatik olarak mevcut kategorinin altına ekler
       icon: 'Package',
+      imageUrl: subCatImage,
       color: 'slate-500',
       formSchema: []
     });
+  };
+
+  const handleSubCatImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setSubCatImage(await resizeImageToDataUrl(file));
+    } catch (err: any) {
+      toast.error(err.message || 'Resim seçilemedi');
+    }
+    e.target.value = '';
   };
 
   const category = categories?.find((c) => c.id === categoryId);
@@ -256,6 +273,39 @@ export const CategoryPage = () => {
                     autoFocus
                     className="h-12 text-base rounded-xl border-slate-200 bg-slate-50 focus-visible:ring-blue-600 focus-visible:bg-white transition-colors"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-slate-700">Kategori Resmi (Opsiyonel)</Label>
+                  <div className="flex items-center gap-4">
+                    {subCatImage ? (
+                      <div className="relative h-24 w-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
+                        <img src={subCatImage} alt="Kategori resmi önizlemesi" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setSubCatImage(null)}
+                          className="absolute top-1 right-1 h-6 w-6 rounded-full bg-white/90 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-white shadow-sm"
+                          aria-label="Resmi kaldır"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="h-24 w-24 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 cursor-pointer transition-colors shrink-0">
+                        <ImagePlus className="h-6 w-6" />
+                        <span className="text-[11px] font-medium">Resim Seç</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleSubCatImageChange} />
+                      </label>
+                    )}
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500">Kategori için bir resim yükleyebilirsiniz.</p>
+                      {subCatImage && (
+                        <label className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer">
+                          Resmi Değiştir
+                          <input type="file" accept="image/*" className="hidden" onChange={handleSubCatImageChange} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-end gap-3 pt-5 border-t border-slate-100 mt-2">
                   <Button variant="outline" type="button" className="h-11 text-sm rounded-xl font-semibold border-slate-200 text-slate-600 hover:bg-slate-50" onClick={() => setIsSubCatModalOpen(false)}>İptal</Button>

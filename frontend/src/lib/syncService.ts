@@ -16,7 +16,6 @@ export const syncOfflineData = async () => {
   if (queueItems.length === 0) return;
 
   isSyncing = true;
-  console.log(`[SyncService]: Senkronizasyon başladı, ${queueItems.length} bekleyen işlem var.`);
 
   for (const item of queueItems) {
     try {
@@ -99,7 +98,6 @@ export const syncOfflineData = async () => {
       if (item.id) {
         await db.syncQueue.delete(item.id);
       }
-      console.log(`[SyncService]: İşlem başarıyla senkronize edildi: ${item.actionType}`);
     } catch (error: any) {
       console.error(`[SyncService]: Senkronizasyon hatası (${item.actionType}):`, error);
 
@@ -138,7 +136,6 @@ export const syncOfflineData = async () => {
   }
 
   isSyncing = false;
-  console.log('[SyncService]: Senkronizasyon tamamlandı.');
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('sync-completed'));
   }
@@ -147,7 +144,6 @@ export const syncOfflineData = async () => {
 // Initialize listeners
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
-    console.log('[SyncService]: Cihaz tekrar çevrimiçi. Veriler senkronize ediliyor...');
     syncOfflineData();
   });
 
