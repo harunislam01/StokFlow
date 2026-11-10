@@ -230,6 +230,11 @@ export const ProductFormPage = () => {
                 {form.formState.errors.productCode && <p className="text-xs text-red-500 font-medium">{form.formState.errors.productCode.message}</p>}
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="materialCode" className="text-slate-700">Malzeme Kodu</Label>
+                <Input id="materialCode" placeholder="Örn: MAT-DR-001" {...form.register('materialCode')} className="h-11 text-sm rounded-xl bg-slate-50/50 border-slate-200 font-mono" />
+              </div>
+
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="name" className="text-slate-700">Ürün İsmi *</Label>
                 <Input id="name" placeholder="Örn: 10K Ohm Direnç" {...form.register('name')} className={`h-11 text-sm rounded-xl bg-slate-50/50 ${form.formState.errors.name ? 'border-red-500' : 'border-slate-200'}`} />
